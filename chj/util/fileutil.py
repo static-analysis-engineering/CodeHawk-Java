@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Python API to access CodeHawk Java Analyzer analysis results
+# CodeHawk Java Analyzer
 # Author: Henny Sipma
 # ------------------------------------------------------------------------------
 # The MIT License (MIT)
@@ -358,6 +358,14 @@ def check_gui():
 def check_analysisdir(path):
     if not os.path.isdir(os.path.join(path,'chanalysis')):
         raise CHJNoAnalysisResultsFoundError(path)
+
+def check_file(filename):
+    if not os.path.isfile(filename):
+        raise CHJFileNotFoundError(filename)
+
+def check_dir(path):
+    if not os.path.isdir(path):
+        raise CHJDirectoryNotFoundError(path)
 
 # ----------------------------------------------------- method_index file --
 
@@ -745,6 +753,8 @@ def get_libsum_index(platform):
         raise CHJLibSumIndexFileNotFoundError(platform,filename)
 
 def get_lib_summary_jarfile_name(jarname,platform=None):
+    if platform is None and os.path.isfile(jarname):
+        return jarname
     (path,libsumindex) = get_libsum_index(platform)
     if jarname in libsumindex:
         libloc = libsumindex[jarname]

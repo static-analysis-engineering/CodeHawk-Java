@@ -40,13 +40,14 @@ class TaintOrigins():
         self.jd.iter_taint_origins(f)
         return results
 
-    def tostring(self):
+    def tostring(self,source):
         header = [('index',8)]
         headerline = ''.join([UP.cjust(t[0],8) for t in header]) + ' taint origin site'
         result = []
         lines= []
         def f(origin):
-            result.append(str(origin.index).rjust(6) + '  ' + str(origin))
+            if source is None or source in str(origin):
+                result.append(str(origin.index).rjust(6) + '  ' + str(origin))
         self.jd.iter_taint_origins(f)
         lines.append(headerline)
         lines.append('-' * 80)

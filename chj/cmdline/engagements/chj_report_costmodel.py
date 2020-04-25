@@ -73,7 +73,7 @@ if __name__ == '__main__':
     lines.append(UP.reportheader('Cost Model Summary',headername))
     lines.append(costreport.to_string(namefilter=namefilter))
     lines.append(costreport.to_side_channels_string())
-    if args.verbose: lines.append(costreport.to_verbose_string())
+    if args.verbose: lines.append(costreport.to_verbose_string(namefilter=namefilter))
     if args.loops: lines.append(costreport.to_loop_bounds_string())
 
     if args.save:

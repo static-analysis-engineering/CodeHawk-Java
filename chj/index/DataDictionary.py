@@ -185,9 +185,9 @@ class DataDictionary():
                 self.appclassindices[cname] = int(cn.get('ix'))
 
     def _initialize_missing_classes(self,path):
-        xnode = UF.get_datamissingclasses_xnode(path)
+        xnode = UF.get_datamissingitems_xnode(path)
         if not xnode is None:
-            for cn in xnode.findall('cn'):
+            for cn in xnode.find('missing-classes').findall('cn'):
                 self.missingclasses.append(int(cn.get('ix')))
 
     def _initialize_method_signatures(self,path):
