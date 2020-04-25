@@ -163,7 +163,7 @@ class CostSummary(object):
 
         if allcosts:
             symbolicdeps = {}
-            multipledeps = []
+            multipledeps = {}
             symboliccosts = self.costmodel.get_symbolic_method_costs()
             lines.append('\n\nSymbolic cost expressions: ' + str(len(symboliccosts)))
             for (cmsix,cost) in symboliccosts:
@@ -181,8 +181,10 @@ class CostSummary(object):
                             if not cmsix in symbolicdeps: symbolicdeps[cmsix] = 0
                             symbolicdeps[cmsix] += 1
                             symbolicname = str(self.jd.get_cms(cmsix))
-                        elif len(depsname) > 2 and not 'lc' in depsname:
-                            multipledeps.append(j.get_name())
+                        elif len(depsname) > 2 and not 'lc' in depsname and 'pc' in depsname:
+                            jname = '_'.join(j.get_name().split('_')[:-2])
+                            multipledeps.setdefault(jname,0)
+                            multipledeps[jname] += 1
                         lines.append('   ' + str(j) + '  ' + symbolicname)
 
             for cmsix in sorted(symbolicdeps):
@@ -191,17 +193,28 @@ class CostSummary(object):
                 lines.append(str(cmsix).rjust(4) + '  ' + str(cmscount).rjust(4) + '  '
                                         + str(cms))
 
-            for s in sorted(multipledeps):
-                lines.append(s)
+            for j in sorted(multipledeps):
+                depsname = j.split('_')
+                lines.append(j + ' (' + str(multipledeps[j]) + ')')
+                for d in depsname[1:]:
+                    if d in  [ 'funcall', 'no', 'callees', '', 'pc' ]:
+                        continue
+                    else:
+                        cmsix = int(d)
+                        cmsname = str(self.jd.get_cms(cmsix))
+                        lines.append('  - ' + cmsname)
+
 
         sclines = [ abbreviatepackages(s) for s in lines ]
         return '\n'.join(sclines)
 
-    def to_verbose_string(self):
+    def to_verbose_string(self,namefilter=(lambda name:True)):
         lines = []
         lines.append('\n\nMethods')
         lines.append('-' * 80)
         def f(mc):
+            name = str(self.get_cms(mc.cmsix))
+            if not namefilter(name): return
             if mc.methodcost.is_value(): return
             lines.append('\n' + mc.get_qname() + ' (' + str(mc.cmsix) + '): '
                              + str(mc.methodcost.cost.get_upper_bounds()))
