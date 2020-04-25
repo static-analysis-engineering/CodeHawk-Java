@@ -24,50 +24,59 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # ------------------------------------------------------------------------------
-"""Runs the CodeHawk Java analyzer on an engagement application to create a cost model."""
 
 import argparse
-import time
-
-from contextlib import contextmanager
+import os
+import subprocess
 
 import chj.cmdline.AnalysisManager as AM
 import chj.util.fileutil as UF
+import chj.util.xmlutil as UX
+
+from chj.index.AppAccess import AppAccess
 
 def parse():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument('appname',help='name of engagement application')
+    parser.add_argument('cmsix',help='index of the method to be annotated',type=int)
+    parser.add_argument('targetclass',help='name of target class name for virtual call')
+    parser.add_argument('--pcs',nargs='*',type=int,help='list of instruction offsets')
     args = parser.parse_args()
     return args
-
-@contextmanager
-def timing(activity):
-    t0 = time.time()
-    yield
-    print('\n' + ('=' * 80) + 
-          '\nCompleted ' + activity + ' in ' + str(time.time() - t0) + ' secs' +
-          '\n' + ('=' * 80))
 
 if __name__ == '__main__':
 
     args = parse()
-    
+
     try:
-        UF.check_analyzer()
         (path,jars) = UF.get_engagement_app_jars(args.appname)
         UF.check_analysisdir(path)
     except UF.CHJError as e:
         print(str(e.wrap()))
         exit(1)
-    
-    pkg_excludes = UF.get_engagement_app_excludes(args.appname)
-    dependencies = UF.get_engagement_app_dependencies(args.appname)
 
-    with timing('cost analysis'):
-        try:
-            am = AM.AnalysisManager(path,jars,platform="ref_8.0_121",
-                                    dependencies=dependencies,excludes=pkg_excludes)
-            am.create_cost_model(space=False)
-        except UF.CHJError as e:
-            print(str(e.wrap()))
+    app = AppAccess(path)
+
+    cms = app.jd.get_cms(args.cmsix)
+    cnix = cms.cnix
+    msix = cms.msix
+    (methodname,methodsig) = app.jd.mssignatures[msix]
+
+    if not app.has_user_data_class(cnix):
+        cn = app.jd.get_cn(cnix)
+        package = cn.get_package_name()
+        cname = cn.get_simple_name()
+        newuserclass = UX.create_user_class_xnode(package,cname)
+        UF.save_userdataclass_file(path,package,cname,newuserclass)
+
+    userclass = app.get_user_data_class(cnix)
+    if not userclass.has_method(msix):
+        userclass.mk_method(methodname,methodsig,msix)
         
+    usermethod = userclass.get_method(msix)
+    for pc in args.pcs:
+        usermethod.add_callee_restriction(pc,args.targetclass)
+
+    userclass.save_xml()
+    
+    print(str(usermethod))

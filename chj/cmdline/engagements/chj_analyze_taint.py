@@ -27,6 +27,9 @@
 """Analyzes an engagement application for taint sources and propagation."""
 
 import argparse
+import time
+
+from contextlib import contextmanager
 
 import chj.cmdline.AnalysisManager as AM
 import chj.util.fileutil as UF
@@ -37,6 +40,14 @@ def parse():
     parser.add_argument('--space',help='analyze for space cost',action='store_true')
     args = parser.parse_args()
     return args
+
+@contextmanager
+def timing(activity):
+    t0 = time.time()
+    yield
+    print('\n' + ('=' * 80) + 
+          '\nCompleted ' + activity + ' in ' + str(time.time() - t0) + ' secs' +
+          '\n' + ('=' * 80))
 
 if __name__ == '__main__':
 
@@ -52,9 +63,10 @@ if __name__ == '__main__':
     pkg_excludes = UF.get_engagement_app_excludes(args.appname)
     dependencies = UF.get_engagement_app_dependencies(args.appname)
 
-    try:
-        am = AM.AnalysisManager(path,jars,platform="ref_8.0_121",
-                                    dependencies=dependencies,excludes=pkg_excludes)
-        am.create_taint_graphs(space=args.space)
-    except UF.CHJError as e:
-        print(str(e.wrap()))
+    with timing('taint analysis'):
+        try:
+            am = AM.AnalysisManager(path,jars,platform="ref_8.0_121",
+                                        dependencies=dependencies,excludes=pkg_excludes)
+            am.create_taint_graphs(space=args.space)
+        except UF.CHJError as e:
+            print(str(e.wrap()))

@@ -30,9 +30,9 @@ import argparse
 
 import chj.util.fileutil as UF
 import chj.util.dotutil as UD
+import chj.util.graphutil as UG
 
 from chj.index.AppAccess import AppAccess
-from chj.reporting.LoopSummary import LoopSummary
 from chj.util.DotGraph import DotGraph
 
 def parse():
@@ -40,13 +40,20 @@ def parse():
     parser.add_argument('appname',help='name of engagement application')
     parser.add_argument('taintsourceid',type=int,
                             help='id of the taint source (get from chj_report_taint_origins)')
+    parser.add_argument('--sink',help='(partial) name of a node to restrict paths to as a destination')
+    parser.add_argument('--loops',help='restrict paths to destinations that represent loop counters',
+                            action='store_true')
     args = parser.parse_args()
     return args
 
-def node_tostring(app,index):
-    ttd = app.jd.ttd
-    return str(ttd.get_taint_node_type(index))
-    
+# return the root of the taint graph
+def get_root_node(nodes,enode):
+    tgts = []
+    for n in enode.findall('edge'):
+        tgts.append(int(n.get('src')))
+    for n in nodes:
+        if not n in tgts:
+            return n
 
 if __name__ == '__main__':
 
@@ -54,35 +61,78 @@ if __name__ == '__main__':
     try:
         (path,_) = UF.get_engagement_app_jars(args.appname)
         UF.check_analysisdir(path)
+        xtrail = UF.get_data_taint_trail_xnode(path,int(args.taintsourceid))        
     except UF.CHJError as e:
         print(str(e.wrap()))
         exit(1)
 
     app = AppAccess(path)
 
-    try:
-        xnode = UF.get_data_taint_trail_xnode(path,int(args.taintsourceid))
-    except UF.CHJError as e:
-        print(str(e.wrap()))
-        exit(1)
+    xnodes = xtrail.find('node-dictionary')
+    xedges = xtrail.find('edges')
 
-    dnode = xnode.find('node-dictionary')
-    enode = xnode.find('edges')
+    nodes = [ int(n.get('ix')) for n in xnodes.findall('tn') ]
+    pathnodes = set([])
 
-    nodes = {}
-    for n in dnode.findall('tn'):
-        nodes[int(n.get('ix'))] = int(n.get('ut'))
+    if (not args.sink is None) or args.loops:
+        sinkids = []
+
+        if not args.sink is None:
+            for n in nodes:
+                cms = app.jd.ttd.get_taint_node_type(n)
+                if args.sink in str(cms):
+                    sinkids.append(n)
+            if len(sinkids) == 0:
+                print('*' * 80)
+                print('No node found that contains ' + args.sink)
+                print('*' * 80)
+                exit(1)
+
+        if args.loops:
+            for n in nodes:
+                cms = app.jd.ttd.get_taint_node_type(n)
+                if cms.is_var() and str(cms.get_variable()) == 'lc':
+                    sinkids.append(n)
+
+        edge_adjacencylists = {}
+        for n in xedges.findall('edge'):
+            src = int(n.get('src'))
+            tgts = [ int(x) for x in n.get('tgts').split(',') ]
+            for t in tgts:
+                edge_adjacencylists.setdefault(t,[])
+                edge_adjacencylists[t].append(src)
+
+        srcid = get_root_node(nodes,xedges)                
+
+        srcname = str(app.jd.ttd.get_taint_node_type(srcid))
+        print('Generating paths from ' + srcname + ' to ')
+        for sinkid in sinkids:
+            sinkname = str(app.jd.ttd.get_taint_node_type(sinkid))
+            print(' - ' + sinkname)
+
+        g = UG.DirectedGraph(nodes,edge_adjacencylists)
+        for sinkid in sinkids:
+            g.find_paths(srcid,sinkid)
+        for p in g.paths:
+            pathnodes = pathnodes.union(p)
+
+    # if no restrictions include all nodes
+    if len(pathnodes) == 0:
+        pathnodes = nodes
 
     edges = []
-    for n in enode.findall('edge'):
+    for n in xedges.findall('edge'):
         src = int(n.get('src'))
-        tgts = [ int(x) for x in n.get('tgts').split(',') ]
-        for tgt in tgts:
-            edges.append((src,tgt))
+        if src in pathnodes:
+            tgts = [ int(x) for x in n.get('tgts').split(',') ]
+            for tgt in tgts:
+                if tgt in pathnodes:
+                    edges.append((src,tgt))
 
     graphname = 'trail_' + str(args.taintsourceid)
     dotgraph = DotGraph(graphname)
     for n in nodes:
+        if not n in pathnodes: continue
         color = None
         cms = app.jd.ttd.get_taint_node_type(n)
         shaded = cms.is_call()
@@ -95,5 +145,7 @@ if __name__ == '__main__':
         elif cms.is_conditional():
             color = 'yellow'
         dotgraph.add_node(str(n),str(cmslabel),shaded=shaded,color=color)
-    for (src,tgt) in edges: dotgraph.add_edge(str(tgt),str(src))
+    for (src,tgt) in edges:
+        if src in pathnodes and tgt in pathnodes:
+            dotgraph.add_edge(str(tgt),str(src))
     UD.print_dot(app.path,dotgraph)

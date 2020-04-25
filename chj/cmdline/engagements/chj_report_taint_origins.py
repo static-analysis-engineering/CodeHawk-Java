@@ -37,6 +37,7 @@ from chj.reporting.TaintOrigins import TaintOrigins
 def parse():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('appname',help='name of engagement application')
+    parser.add_argument('--source',help='only include sources with source as substring')
     parser.add_argument('--save',help='save report to chreports directory',action='store_true')
     args = parser.parse_args()
     return args
@@ -57,7 +58,7 @@ if __name__ == '__main__':
     lines = []
     headername = args.appname
     lines.append(UP.reportheader('Taint Origins',headername))
-    lines.append(TaintOrigins(app).tostring())
+    lines.append(TaintOrigins(app).tostring(args.source))
 
     if args.save:
         reportsdir = UF.get_engagement_reports_dir(path)

@@ -27,6 +27,9 @@
 """Parses and analyzes an Engagement application."""
 
 import argparse
+import time
+
+from contextlib import contextmanager
 
 import chj.cmdline.AnalysisManager as AM
 import chj.util.fileutil as UF
@@ -39,6 +42,14 @@ def parse():
                             help='show list of classes')
     args = parser.parse_args()
     return args
+
+@contextmanager
+def timing(activity):
+    t0 = time.time()
+    yield
+    print('\n' + ('=' * 80) + 
+          '\nCompleted ' + activity + ' in ' + str(time.time() - t0) + ' secs' +
+          '\n' + ('=' * 80))
 
 if __name__ == '__main__':
 
@@ -57,10 +68,11 @@ if __name__ == '__main__':
 
     print('Analyzing: ' + args.appname + ' (' + path + ')')
 
-    try:
-        am = AM.AnalysisManager(path,jars,platform='ref_8.0_121',
-                                dependencies=dependencies,excludes=pkg_excludes)
-        am.analyze(False)
-    except UF.CHJError as e:
-        print(str(e.wrap()))
+    with timing('numerical analysis'):
+        try:
+            am = AM.AnalysisManager(path,jars,platform='ref_8.0_121',
+                                    dependencies=dependencies,excludes=pkg_excludes)
+            am.analyze(False)
+        except UF.CHJError as e:
+            print(str(e.wrap()))
         
