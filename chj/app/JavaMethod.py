@@ -77,7 +77,7 @@ class JavaMethod(object):
     def get_aqname(self): return self.jd.get_cms(self.cmsix).get_aqname()
 
     def get_method_signature_string(self):
-        return self.jd.get_method(self.cmsix).get_method_signature_string()
+        return self.jd.get_cms(self.cmsix).get_signature()
 
     def get_exception_table(self):
         self._read_method_bytecode()

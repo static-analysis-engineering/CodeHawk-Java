@@ -158,17 +158,23 @@ class Cfg():
             if not src in self.edges: self.edges[src] = []
             self.edges[src].append(tgt)
 
-    def as_dot(self, methodcost=None):
-        def register_node(nodes, methodcost, dotgraph, src):
-            srccost = " : " + str(methodcost.get_block_cost(src)) if methodcost else ""
+    def as_dot(self, methodcost=None, simplecost=False):
+        def register_node(nodes, methodcost, dotgraph, src, simplecost):
+            if simplecost:
+                srccost = " : " + str(methodcost.get_simplified_block_cost(src)) if methodcost else ""
+            else:
+                srccost = " : " + str(methodcost.get_block_cost(src)) if methodcost else ""
             srcstring = "pc=" + str(src) + srccost
             srcstring = srcstring.replace(' ', '').replace(u'\xa0', '')
             dotgraph.add_node(srcstring)
             nodes[srcstring] = src
             return srcstring
 
-        def register_edge(nodes, methodcost, dotgraph, src):
-            srccost = " : " + str(methodcost.get_block_cost(src)) if methodcost else ""
+        def register_edge(nodes, methodcost, dotgraph, src, simplecost):
+            if simplecost:
+                srccost = " : " + str(methodcost.get_simplified_block_cost(src)) if methodcost else ""
+            else:
+                srccost = " : " + str(methodcost.get_block_cost(src)) if methodcost else ""
             srcstring = "pc=" + str(src) + srccost
             srcstring = srcstring.replace(' ', '').replace(u'\xa0', '')
             nodes[srcstring] = src
@@ -182,24 +188,24 @@ class Cfg():
             if len(self.edges[src]) == 2 and block.has_conditions():
                 labeltxt = ""
 
-                srcstring = register_node(nodes, methodcost, dotgraph, src)
+                srcstring = register_node(nodes, methodcost, dotgraph, src, simplecost)
 
                 tgt = self.edges[src][0]
-                blockstring = register_edge(nodes, methodcost, dotgraph, tgt)
+                blockstring = register_edge(nodes, methodcost, dotgraph, tgt, simplecost)
                 dotgraph.add_edge(srcstring, blockstring, labeltxt=str(block.get_fcond()))
 
                 tgt = self.edges[src][1]
-                blockstring = register_edge(nodes, methodcost, dotgraph, tgt)
+                blockstring = register_edge(nodes, methodcost, dotgraph, tgt, simplecost)
                 dotgraph.add_edge(srcstring, blockstring, labeltxt=str(block.get_tcond()))
             else:
-                srcstring = register_node(nodes, methodcost, dotgraph, src)
+                srcstring = register_node(nodes, methodcost, dotgraph, src, simplecost)
 
                 for tgt in self.edges[src]:
-                    blockstring = register_edge(nodes, methodcost, dotgraph, tgt)
+                    blockstring = register_edge(nodes, methodcost, dotgraph, tgt, simplecost)
                     dotgraph.add_edge(srcstring, blockstring)
 
         for src in self.blocks:
-            register_node(nodes, methodcost, dotgraph, src)
+            register_node(nodes, methodcost, dotgraph, src, simplecost)
 
         return (nodes, dotgraph)
 

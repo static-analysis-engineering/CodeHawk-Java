@@ -130,7 +130,7 @@ class JavaClass():
         result = {}
         for method in self.get_methods():
             methodresult = method.as_list()
-            methodstring = method.get_aqname() + " ( " + str(method.cmsix) + " ) "
+            methodstring = method.get_method_signature_string() + " ( " + str(method.cmsix) + " ) "
             methodcmsix = str(method.cmsix)
             result[methodcmsix] = {}
             result[methodcmsix]['methodstring'] = methodstring
