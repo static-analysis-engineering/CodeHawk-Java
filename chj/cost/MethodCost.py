@@ -58,6 +58,13 @@ class MethodCost ():
     def get_block_cost(self,pc):
         if pc in self.blocks: return self.blocks[pc]
 
+    def get_simplified_block_cost(self,pc):
+        cost = self.blocks[pc].cost
+        if cost.is_value() or cost.is_range() or cost.is_top():
+            return str(cost)
+        else:
+            return "X"
+
     def has_sidechannel_checks(self): return len(self.sidechannelchecks) > 0
 
     def get_loop_costs(self): return self.loops.values()

@@ -51,6 +51,13 @@ class CostModel():
     def get_method_cost(self,id):
         if id in self.methodcosts: return self.methodcosts[id]
 
+    def get_simplified_method_cost(self,id):
+        if id in self.methodcosts:
+            cost = self.methodcosts[id].methodcost
+            if cost.is_top() or cost.is_value() or cost.is_range():
+                return self.methodcosts[id]
+            else: return "X"
+
     def get_top_method_costs(self):
         result = []
         for cmsix in self.methodcosts:
