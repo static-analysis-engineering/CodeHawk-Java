@@ -54,5 +54,7 @@ class ClassMethodSignature(JavaTypesBase):
 
     def get_qname(self): return self.__str__()
 
+    def get_signature(self): return str(self.signature)
+
     def __str__(self):
         return str(self.classname) + '.' + str(self.signature)

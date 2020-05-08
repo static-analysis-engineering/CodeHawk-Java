@@ -544,6 +544,7 @@ class JTermRange(JTermBase):
     def is_value(self):
         if self.get_lower_bounds().is_constant() and self.get_upper_bounds().is_constant():
             return self.get_lower_bounds().equals(self.get_upper_bounds())
+        return False
 
     def is_float_range(self): return False
     '''

@@ -39,8 +39,14 @@ class Callgraph():
         self._get_edges()
 
     def as_dot(self, cmsix):
+        def register_node(dotgraph, cmsix, nodes):
+            txt = self.app.get_method(cmsix).get_aqname()
+            nodes[txt] = str(cmsix)
+            dotgraph.add_node(txt) 
+
+        nodes = {}
         dotgraph = DotGraph("cg_" + str(cmsix))
-        dotgraph.add_node(self.app.get_method(cmsix).get_aqname()) 
+        register_node(dotgraph, cmsix, nodes)
 
         rem_nodes = [ cmsix ]
         done_nodes = []
@@ -56,13 +62,15 @@ class Callgraph():
                 (msix, tgt) = tgts[pc]
                 for cnix in tgt.cnixs:
                     tgtcmsix = self.jd.get_cmsix(cnix, msix)
-                    tgtname = (self.app.get_method(tgtcmsix).get_aqname() if 
-                            self.jd.is_application_class(cnix) else 
-                            self.jd.get_cn(cnix).get_name() + '.' + self.jd.mssignatures[msix][0])
-                    dotgraph.add_edge(methodname, tgtname)
                     if self.jd.is_application_class(cnix):
+                        tgtname = self.app.get_method(tgtcmsix).get_aqname()
+                        dotgraph.add_edge(methodname, tgtname)
+                        register_node(dotgraph, tgtcmsix, nodes)
                         if tgtcmsix not in done_nodes: rem_nodes.append(tgtcmsix)
-        return dotgraph
+                    else:
+                        tgtname = self.jd.get_cn(cnix).get_name() + '.' + self.jd.mssignatures[msix][0]
+                        dotgraph.add_edge(methodname, tgtname)
+        return (nodes, dotgraph)
 
     def as_rev_dot(self, cmsix):
         dotgraph = DotGraph("revcg_" + str(cmsix))
