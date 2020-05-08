@@ -26,7 +26,8 @@
 # ------------------------------------------------------------------------------
 
 #Dot specifies that " (double quotes) must be escaped
-replacements = [ ('"', '\\"') ]
+replacements = [ ('"', '\\"') ,
+                     ('<init>', '\<init\>') ]
 
 def sanitize(s):
     for (a,b) in replacements:
@@ -42,7 +43,7 @@ class DotNode(object):
         self.color = color
         self.addquotes = True
 
-    def set_label(self,s): self.label = s
+    def set_label(self,s): self.label = sanitize(s)
     def set_color(self,c): self.color = c
     def set_shaded(self): self.shaded = True
 

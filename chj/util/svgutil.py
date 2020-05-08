@@ -54,6 +54,14 @@ def append_loop_levels(svg, loop_levels):
         pc = int(node.attrib['pc'])
         node.attrib['ldepth'] = str(loop_levels[pc])
 
+def append_cmsixs(svg, cmsix_dict):
+    nodes = _get_graph_nodes(svg)
+    for node in nodes:
+        ns = svg_namespace()
+        title = node.findtext('svg:title', namespaces=ns)
+        if title in cmsix_dict:
+            node.attrib['cmsix'] = str(cmsix_dict[title])
+
 def append_pcs(svg, node_pcs):
     nodes = _get_graph_nodes(svg)
     for node in nodes:
