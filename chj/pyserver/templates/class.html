@@ -1,0 +1,41 @@
+<!DOCTYPE HTML PUBLIC>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{{ title }}</title>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<!-- <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"> -->
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+<link rel="stylesheet" href="{{url_for('static',filename='class.css') }}">
+<script src="{{url_for('static',filename='class.js')}}" type="module"></script>
+</head>
+
+<body>
+  <div id="mainpage" eng={{ eng }} proj={{ proj }} index={{ index }}>
+  <!-- <div id="mainpage"> -->
+    <header>
+    CodeHawk Java Analyzer
+    </header>
+    <nav>
+      <div>
+        <ul>
+          <li id="HOME"><a href="/bytecode/{{eng}}/{{proj}}/{{index}}">HOME</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div id="container">
+      <div id = "datapage">
+        <h3 id = "title">{{ name }}</h3>
+        <div id = "data">
+          {{ body }}
+        </div>
+      </div>
+    </div>
+    <footer>
+    &copy; 2019, Kestrel Technology, LLC, Palo Alto, CA 94304
+    </footer>
+  </div>
+<hr>
+<address></address>
+<!-- hhmts start -->Last modified: Wed Mar 20 10:49:49 PDT 2019 <!-- hhmts end -->
+</body> </html>
