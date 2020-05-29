@@ -26,38 +26,56 @@
 # ------------------------------------------------------------------------------
 
 import argparse
+import os
+import subprocess
 
-import chj.util.printutil as UP
+import chj.cmdline.AnalysisManager as AM
 import chj.util.fileutil as UF
-import chj.util.dotutil as UD
+import chj.util.xmlutil as UX
 
 from chj.index.AppAccess import AppAccess
-from chj.reporting.LoopSummary import LoopSummary
-from chj.util.DotGraph import DotGraph
 
 def parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('appname',help='name of engagement application')
+    parser.add_argument('cmsix',help='index of the method to be annotated',type=int)
+    parser.add_argument('interface',help='name of interface to be replaced')
+    parser.add_argument('targetclass',help='name of target class name for interface target')
     args = parser.parse_args()
     return args
-
-def node_tostring(app,index):
-    tdd = app.jd.ttd
-    return str(ttd.get_taint_node_type(index))
-    
 
 if __name__ == '__main__':
 
     args = parse()
 
     try:
-        (path,_) = UF.get_engagement_app_jars(args.appname)
+        (path,jars) = UF.get_engagement_app_jars(args.appname)
         UF.check_analysisdir(path)
     except UF.CHJError as e:
         print(str(e.wrap()))
         exit(1)
 
     app = AppAccess(path)
-    def f(i,n): print(str(i).rjust(4) + '  ' + str(n))
-    app.jd.ttd.iter_taint_node_types(f)
-                          
+
+    cms = app.jd.get_cms(args.cmsix)
+    cnix = cms.cnix
+    msix = cms.msix
+    (methodname,methodsig) = app.jd.mssignatures[msix]
+
+    if not app.has_user_data_class(cnix):
+        cn = app.jd.get_cn(cnix)
+        package = cn.get_package_name()
+        cname = cn.get_simple_name()
+        newuserclass = UX.create_user_class_xnode(package,cname)
+        UF.save_userdataclass_file(path,package,cname,newuserclass)
+
+    userclass = app.get_user_data_class(cnix)
+    if not userclass.has_method(msix):
+        userclass.mk_method(methodname,methodsig,msix)
+        
+    usermethod = userclass.get_method(msix)
+    usermethod.add_interface_restriction(args.interface,args.targetclass)
+
+    userclass.save_xml()
+    
+    print(str(usermethod))

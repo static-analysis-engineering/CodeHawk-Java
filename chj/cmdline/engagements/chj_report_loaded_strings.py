@@ -36,6 +36,7 @@ from chj.index.AppAccess import AppAccess
 def parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('appname',help='name of engagement application')
+    parser.add_argument('--substring',help='must include this substring')
     parser.add_argument('--save',help='save report to chreports directory',action='store_true')
     args = parser.parse_args()
     return args
@@ -53,7 +54,7 @@ if __name__ == '__main__':
 
     app = AppAccess(path)
     
-    results = app.get_loaded_strings()
+    results = app.get_loaded_strings(substring=args.substring)
 
     lines = []
     headername = args.appname

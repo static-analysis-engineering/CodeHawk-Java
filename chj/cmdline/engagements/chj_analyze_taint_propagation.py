@@ -27,6 +27,9 @@
 """Analyzes taint propagation from a particular taint source."""
 
 import argparse
+import time
+
+from contextlib import contextmanager
 
 import chj.cmdline.AnalysisManager as AM
 import chj.util.fileutil as UF
@@ -37,6 +40,14 @@ def parse():
     parser.add_argument('origin',type=int,help='index of taint origin of interest')
     args = parser.parse_args()
     return args
+
+@contextmanager
+def timing(activity):
+    t0 = time.time()
+    yield
+    print('\n' + ('=' * 80) + 
+          '\nCompleted ' + activity + ' in ' + str(time.time() - t0) + ' secs' +
+          '\n' + ('=' * 80))
 
 if __name__ == '__main__':
 
@@ -53,7 +64,9 @@ if __name__ == '__main__':
     dependencies = UF.get_engagement_app_dependencies(args.appname)
 
     am = AM.AnalysisManager(path,jars,dependencies=dependencies,excludes=pkg_excludes)
-    try:
-        am.create_taint_trail(args.origin)
-    except UF.CHJError as e:
-        print(str(e.wrap()))
+
+    with timing('taint propagation analysis'):
+        try:
+            am.create_taint_trail(args.origin)
+        except UF.CHJError as e:
+            print(str(e.wrap()))

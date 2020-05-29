@@ -27,6 +27,9 @@
 """Reports the cpu time cost of methods annd loops."""
 
 import argparse
+import time
+
+from contextlib import contextmanager
 
 import chj.util.printutil as UP
 import chj.util.fileutil as UF
@@ -44,6 +47,14 @@ def parse():
                             help='only report functions that contain these as substrings')
     args = parser.parse_args()
     return args
+
+@contextmanager
+def timing(activity):
+    t0 = time.time()
+    yield
+    print('\n' + ('=' * 80) + 
+          '\nCompleted ' + activity + ' in ' + str(time.time() - t0) + ' secs' +
+          '\n' + ('=' * 80))
 
 if __name__ == '__main__':
 
@@ -71,10 +82,12 @@ if __name__ == '__main__':
     lines = []
     headername = args.appname
     lines.append(UP.reportheader('Cost Model Summary',headername))
-    lines.append(costreport.to_string(namefilter=namefilter))
-    lines.append(costreport.to_side_channels_string())
-    if args.verbose: lines.append(costreport.to_verbose_string(namefilter=namefilter))
-    if args.loops: lines.append(costreport.to_loop_bounds_string())
+
+    with timing('Print cost report'):
+        lines.append(costreport.to_string(namefilter=namefilter))
+        lines.append(costreport.to_side_channels_string())
+        if args.verbose: lines.append(costreport.to_verbose_string(namefilter=namefilter))
+        if args.loops: lines.append(costreport.to_loop_bounds_string())
 
     if args.save:
         reportsdir = UF.get_engagement_reports_dir(path)

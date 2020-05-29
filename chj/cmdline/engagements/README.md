@@ -6,7 +6,9 @@
 - [chj_analyze_cost](#chj_analyze_cost)
 - [chj_analyze_taint](#chj_analyze_taint)
 - [chj_add_callee_restriction](#chj_add_callee_restriction)
+- [chj_add_interface_target](#chj_add_interface_target)
 - [chj_add_loopbound](#chj_add_loopbound)
+- [chj_report_branchconditions](#chj_report_branchconditions)
 - [chj_report_costmodel](#chj_report_costmodel)
 - [chj_report_taint_origins](#chj_report_taint_origins)
 - [chj_report_taint_trail](#chj_report_taint_trail)
@@ -44,6 +46,18 @@ class for one or more virtual call instructions in a method.
 - keyword arguments:
   - *pcs* list of byte-code offsets: byte-code offsets of call instruction(s)
 
+#### chj_add_interface_target
+Adds a mapping from an interface to a concrete class that implements
+that interface to a method to indicate that all interface calls on that
+interface are to be resolved to the mapped concrete class.
+- positional arguments:
+  - *appname*: name of engagement application (e.g., blogger)
+  - *cmsix*: index of the method to which the mapping is to be added
+    (can be obtained from reports like the cost model report)
+  - *interface*: fully qualified name of the interface to be mapped
+  - *targetclass*: fully qualified name of the concrete class to be
+    used as a target
+
 #### chj_add_loopbound
 Adds a constant or symbolic loopbound to the userdata file of an
 application method. If no userdata file exists yet for the class
@@ -57,6 +71,15 @@ of the method a new file is created.
 - keyword arguments:
   - *--constant* n: number of iterations
   - *--symbolic* name: name of symbolic constant for number of iterations
+
+#### chj_report_branchconditions
+Lists, in alphabetical order, all conditional branch conditions encountered
+in the application methods.
+- positional arguments:
+  - *appname*: name of engagement application (e.g., blogger)
+
+- keyword arguments:
+  - *--includes* string: only report conditions that include this string
 
 #### chj_report_costmodel
 Reports the cpu time costs (in nanoseconds) for all application methods.
