@@ -639,17 +639,14 @@ def get_engagements_repo_path():
     raise CHJEngagementsDirectoryNotFoundError(config.stacrepodir)
 
 def get_engagements_directory():
-    engrepo = get_engagements_repo_path()
-    path = os.path.join(os.path.join(engrepo,'targets'),'STAC-Engagements')
+    path = get_engagements_repo_path()
     if os.path.isdir(path):
         return path
     raise CHJDirectoryNotFoundError(path)
 
 def get_engagements_data_filename():
-    repodir = get_engagements_repo_path()
-    tgtsdir = os.path.join(repodir,'targets')
-    engdir = os.path.join(tgtsdir,'STAC-Engagements')
-    filename = os.path.join(engdir,'engagements.json')
+    path = get_engagements_repo_path()
+    filename = os.path.join(path,'engagements.json')
     if os.path.isfile(filename):
         return filename
     raise CHJFileNotFoundError(filename)

@@ -137,7 +137,12 @@ class CostModel():
         self.methodcosts = {}
         for cnix in self.jd.appclassindices.values():
             c = self.jd.get_cn(cnix)
-            xnode = UF.get_costclass_xnode(self.app.path,c.get_package_name(),c.get_simple_name())
+            try:
+                xnode = UF.get_costclass_xnode(self.app.path,c.get_package_name(),c.get_simple_name())
+            except UF.CHJError as e:
+                print(str(e.wrap()))
+                print('\nPlease make sure cost analysis has been performed with chj_analyze_cost.py.\n')
+                exit(1)
             if not xnode is None:
                 for x in xnode.find('methods').findall('method'):
                     if 'abstract' in x.attrib: continue

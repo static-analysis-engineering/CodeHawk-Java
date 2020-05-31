@@ -106,9 +106,9 @@ class AppAccess(object):
         self._get_costmodel()
         return self.costmodel
 
-    def get_loaded_strings(self):
+    def get_loaded_strings(self,substring=None):
         results = []
-        def f(c): results.extend(c.get_loaded_strings())
+        def f(c): results.extend(c.get_loaded_strings(substring=substring))
         self.iter_classes(f)
         return results
 

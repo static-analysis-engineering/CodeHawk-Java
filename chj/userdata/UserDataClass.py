@@ -88,8 +88,23 @@ class UserDataClass(object):
             self._initialize_method(m,mnode)
 
     def _initialize_method(self,m,mnode):
+        iinode = mnode.find('interface-targets')
         ccnode = mnode.find('callees')
         bbnode = mnode.find('bounds')
+        mcnode = mnode.find('method-cost')
+        if not mcnode is None:
+            mcost = []
+            if 'iconst' in mcnode.attrib:
+                mcost.append(('iconst',int(mcnode.get('iconst'))))
+            if 'lb' in mcnode.attrib:
+                mcost.append(('lb',int(mcnode.get('lb'))))
+            if 'ub' in mcnode.attrib:
+                mcost.append(('ub',int(mcnode.get('ub'))))
+            if len(mcost) > 0:
+                m.add_method_cost(mcost)
+        if not iinode is None:
+            for inode in iinode.findall('tgt'):
+                m.add_interface_target(inode.get('i'),inode.get('t'))
         if not ccnode is None:
             for cnode in ccnode.findall('callee'):
                 kind = cnode.get('kind')
@@ -126,9 +141,17 @@ class UserDataMethod(object):
         self.calleerestrictions = {}
         self.numericbounds = {}
         self.symbolicbounds = {}
+        self.interfacerestrictions = {}
+        self.mcost = []
+
+    def add_interface_target(self,intf,tgt):
+        self.interfacerestrictions[intf] = tgt
 
     def add_callee_restriction(self,pc,tgt):
         self.calleerestrictions[pc] = tgt
+
+    def add_interface_restriction(self,interface,tgtclass):
+        self.interfacerestrictions[interface] = tgtclass
 
     def add_bound(self,pc,boundtype,boundvalue):
         if boundtype == 'it':
@@ -136,9 +159,25 @@ class UserDataMethod(object):
         else:
             self.symbolicbounds[pc] = boundvalue
 
+    def add_method_cost(self,mcost):    # [ (attr-name,value) ]
+        self.mcost = mcost
+
     def write_xml(self,mnode):
         mnode.set('name',self.name)
         mnode.set('sig',self.msig)
+        if len(self.mcost) > 0:
+            mcnode = ET.Element('method-cost')
+            mnode.append(mcnode)
+            for (attr,attrval) in self.mcost:
+                mcnode.set(attr,str(attrval))
+        if len(self.interfacerestrictions) > 0:
+            iinode = ET.Element('interface-targets')
+            mnode.append(iinode)
+            for (intf,tgt) in self.interfacerestrictions.items():
+                inode = ET.Element('tgt')
+                inode.set('i',intf)
+                inode.set('t',tgt)
+                iinode.append(inode)
         ccnode = ET.Element('callees')
         mnode.append(ccnode)
         for (pc,tgt) in self.calleerestrictions.items():
@@ -164,6 +203,10 @@ class UserDataMethod(object):
         lines = []
         lines.append(' ')
         lines.append('  Method ' + self.name + ' ' +  self.msig)
+        if len(self.interfacerestrictions) > 0:
+            lines.append('  Interface restrictions:')
+            for (intf,tgt) in self.interfacerestrictions.items():
+                lines.append('  ' + intf + ' -> ' + tgt)
         if len(self.calleerestrictions) > 0:
             lines.append('  Callee restrictions:')
             for pc in sorted(self.calleerestrictions):

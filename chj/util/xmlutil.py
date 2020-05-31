@@ -27,14 +27,15 @@
 import datetime
 import xml.etree.ElementTree as ET
 
-#replacements = [ ('&', '&amp;'), ('<','&lt;'), ('>','&gt;'),
-#                 ('"','&quot;'), ('\'','&apos;') ]
+replacements = [ ('&', '&amp;'), ('<','&lt;'), ('>','&gt;'),
+                 ('"','&quot;'), ('\'','&apos;') ]
 
 
 def sanitizestring(s):
-    #for (a,b) in replacements:
-    #    s = s.replace(a,b)
+    for (a,b) in replacements:
+        s = s.replace(a,b)
     return s
+    # return s
 
 def getixs(xnode):
     if 'ixs' in xnode.attrib:

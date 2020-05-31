@@ -206,11 +206,13 @@ class JavaMethod(object):
             for tv in tvars:
                 if tv.get_variable().get_name() == name: return tv
 
-    def get_loaded_strings(self):
+    def get_loaded_strings(self,substring=None):
         results = []
         def f(pc,i):
             if i.is_load_string():
-                results.append((pc,i.get_string_constant().get_string()))
+                s = i.get_string_constant().get_string()
+                if substring is None or substring in s:
+                    results.append((pc,i.get_string_constant().get_string()))
         self.iter_instructions(f)
         return results
 

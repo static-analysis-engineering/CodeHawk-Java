@@ -176,23 +176,36 @@ class CostSummary(object):
                     for j in cost.get_ub_symbolic_dependencies():
                         depsname = j.get_name().split('_')
                         symbolicname = ''
+                        symboliccost = '?'
                         if len(depsname) == 2:
                             cmsix = int(depsname[1])
                             if not cmsix in symbolicdeps: symbolicdeps[cmsix] = 0
                             symbolicdeps[cmsix] += 1
                             symbolicname = str(self.jd.get_cms(cmsix))
+                            symboliccost = self.costmodel.get_method_cost(cmsix)
                         elif len(depsname) > 2 and not 'lc' in depsname and 'pc' in depsname:
                             jname = '_'.join(j.get_name().split('_')[:-2])
                             multipledeps.setdefault(jname,0)
                             multipledeps[jname] += 1
                         lines.append('   ' + str(j) + '  ' + symbolicname)
+                        # if (not (symboliccost is None)) and symboliccost != '?':
+                        #    lines.append('      --> (' + str(symboliccost.methodcost)  + ')')
 
+            unknowncosts = len(symbolicdeps)
+            affected = sum( [ symbolicdeps[i] for i in symbolicdeps ])
+            lines.append('\nMethods with unknown cost (' + str(unknowncosts) + ', '
+                             + str(affected) + ')')
             for cmsix in sorted(symbolicdeps):
                 cms = self.jd.get_cms(cmsix)
                 cmscount = symbolicdeps[cmsix]
                 lines.append(str(cmsix).rjust(4) + '  ' + str(cmscount).rjust(4) + '  '
                                         + str(cms))
 
+            multipledepcount = len(multipledeps)
+            affected = sum( [ multipledeps[i] for i in multipledeps ])
+            lines.append('\nAmbiguity in method resolution ('
+                             + str(len(multipledeps)) + ', '
+                             + str(affected) + ')')
             for j in sorted(multipledeps):
                 depsname = j.split('_')
                 lines.append(j + ' (' + str(multipledeps[j]) + ')')

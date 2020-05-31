@@ -60,9 +60,9 @@ class JavaClass():
     def iter_methods(self,f): 
         for cmsix in self.methods: f(cmsix,self.methods[cmsix])
 
-    def get_loaded_strings(self):
+    def get_loaded_strings(self,substring=None):
         results = []
-        def f(cmsix,m): results.append((cmsix,m.get_loaded_strings()))
+        def f(cmsix,m): results.append((cmsix,m.get_loaded_strings(substring=substring)))
         self.iter_methods(f)
         return results
 
