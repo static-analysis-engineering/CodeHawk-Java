@@ -38,5 +38,4 @@ def getLocals(config):
     # Set local configuration variables here if you want them to differ from the defaults in Config.py
     
     # Example :
-    config.stacrepodir = '/home/username/CodeHawk-Java-Targets-Engagements
-
+    config.stacrepodir = '/home/username/CodeHawk-Java-Targets-Engagements'
