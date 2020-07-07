@@ -56,7 +56,7 @@ class Config():
         # default settings
         self.utildir = os.path.dirname(os.path.abspath(__file__))
         self.chjdir = os.path.dirname(self.utildir)
-        self.bindir = os.path.join(self.chjdir,'binaries')
+        self.bindir = os.path.join(self.chjdir,'bin')
         self.rootdir = os.path.dirname(self.chjdir)
         self.summariesdir = os.path.join(self.chjdir,'summaries')
         self.jdksummaries = os.path.join(self.summariesdir,'jdk.jar')
