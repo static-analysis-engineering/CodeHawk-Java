@@ -252,7 +252,7 @@ class CHJNoAnalysisResultsFoundError(CHJError):
         self.path = path
 
     def __str__(self):
-        return ('No analysis results found in ' + path
+        return ('No analysis results found in ' + self.path
                     + '\nPlease run the analyzer first (chj_analyze.py)')
 
 class  CHJTaintTrailNotFoundError(CHJError):
