@@ -192,7 +192,7 @@ function color_nodes() {
     } else {
         for (var i = 0; i < nodes.length; i++) {
             var polygon = nodes[i].getElementsByTagName('polygon')[0];
-            polygon.setAttribute('fill', 'seashell');
+            polygon.setAttribute('fill', '#f4f4f4');
         }
     }
 }
@@ -231,7 +231,7 @@ function reset_fill() {
     var nodes = document.getElementsByClassName('node');
     for (var i = 0; i < nodes.length; i++) {
         var polygon = nodes[i].getElementsByTagName('polygon')[0];
-        polygon.setAttribute('fill', 'seashell');
+        polygon.setAttribute('fill', '#f4f4f4');
     }
 }
 

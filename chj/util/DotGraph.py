@@ -92,7 +92,7 @@ class DotGraph(object):
         self.nodes = {}
         self.edges = {}
         self.rankdir = 'TB'
-        self.bgcolor = 'seashell'
+        self.bgcolor = 'gray96'
 
     def add_node(self,name,labeltxt=None,shaded=False,color=None):
         if not name in self.nodes:

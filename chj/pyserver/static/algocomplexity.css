@@ -1,61 +1,3 @@
-body {
-    background-color: Seashell;
-    font-family: sans-serif;
-}
-
-header {
-    background-color: Seashell;
-    border: 1px solid black;
-    /*color:  #efe5d0;*/
-    color: Black;
-    padding: 15px;
-    margin: 10px 10px 0px 10px;
-    font-size: 110%;
-}
-
-footer {
-    background-color: SkyBlue;
-    color:  Black;
-    text-align:center;
-    padding: 15px;
-    margin: 0px 10px 10px 10px;
-    font-size: 90%;
-    clear: left;
-}
-
-h2 {
-    font-size: 110%;
-    color: #954b4b;
-}
-
-/* =====================================================================
- * Navigation bar 
- * ---------------------------------------------------------------------
- */
-nav {
-    background-color: Seashell;
-    border: 1px solid black;
-    color: Black;
-    margin: 10px 10px 0px 10px;
-    font-size: 80%;
-}
-
-nav div ul {
-    margin: 0px;
-    list-style-type: none;
-    padding: 5px 0px 5px 0px;
-}
-
-nav div ul li {
-    display: inline;
-    padding: 5px;
-}
-
-nav div ul li.selected {
-    background-color: #b5a789;
-}
-
-
 /* =====================================================================
  * main page
  * ---------------------------------------------------------------------
@@ -82,7 +24,6 @@ nav div ul li.selected {
 #datapage {
     border: 1px solid black;
     display: table-cell;
-    background-color: SeaShell;
     color: #675c47;
     font-size: 80%;
     padding: 15px;
@@ -93,7 +34,6 @@ nav div ul li.selected {
 
 #sidebar {
     border: 1px solid black;
-    background-color: Seashell;
     color: Black;
     display: table-cell;
     font-size: 80%;
@@ -124,117 +64,4 @@ nav div ul li.selected {
     margin: 10px;
     padding: 0;
     cursor: pointer;
-}
-
-.caret {
-    cursor: pointer;
-    -moz-user-select: none;
-    user-select: none;
-}
-
-.caret::before {
-    content: "\25B6";
-    color: black;
-    display: inline-block;
-    margin-right: 6px;
-}
-
-.caret-down::before {
-    transform: rotate(90deg);
-}
-
-.nested {
-    display: none;
-}
-
-.active {
-    display: block;
-}
-
-.xselected span {
-    background-color: #b5a789;
-}
-
-.mousedover {
-    background-color: #b5a789;
-}
-
-/* =====================================================================
- * table
- * ---------------------------------------------------------------------
- */
-
-table {
-    overflow: scroll;
-    margin: 10px;
-}
-
-table, th, td {
-    border: 1px solid black;
-    border-collapse: collapse;
-}
-
-th, td {
-    /*border: 1px solid black;*/
-    padding: 5px 15px 5px 15px; 
-    display: inline-block table-cell;
-}
-
-td.clickable, a {
-    cursor: pointer;
-    color: #0000B0;
-    text-decoration: none;
-}
-
-td.breakable {
-    word-wrap: break-word;
-    word-break: break-all;
-}
-
-td.rightalign {
-    text-align: right;
-}
-
-/* =====================================================================
- * code table
- * ---------------------------------------------------------------------
- */
-div#codetable {
-}
-
-.methodtable {
-    background-color: #efe5d0;
-    margin: 15px;
-    border: 1px solid black;
-    border-collapse: collapse;
-}
-
-/* =====================================================================
- * collapsible element
- * ---------------------------------------------------------------------
- */
-.collapsible {
-    background-color: Seashell;
-    color: Black;
-    cursor: pointer;
-    padding: 5px;
-    width: 100%;
-    border: 1px;
-    text-align: left;
-    outline: 1px;
-    font-size: 15px;
-    font-weight: bold;
-    margin: 5px;
-}
-
-.active, .collapsible:hover {
-    background-color: Seashell;
-}
-
-.content {
-    padding: 0 18px;
-    display: none;
-    overflow: hidden;
-    background-color: #fff6e1;
-    margin: 5px;
 }

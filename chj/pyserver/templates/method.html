@@ -7,16 +7,17 @@
 <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"> -->
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
 <link rel="stylesheet" href="{{url_for('static',filename='method.css') }}">
+<link rel="stylesheet" href="{{url_for('static',filename='globals.css') }}">
 <script src="{{url_for('static',filename='method.js')}}" type="module"></script>
 </head>
 
 <body>
   <div id="mainpage" eng={{ eng }} proj={{ proj }} index={{ index }}>
   <!-- <div id="mainpage"> -->
-    <header>
+    <header class='near-white'>
     CodeHawk Java Analyzer
     </header>
-    <nav>
+    <nav class='near-white'>
       <div>
         <ul>
           <li id="HOME"><a href="/methodbytecode/{{eng}}/{{proj}}/{{index}}">HOME</a></li>
@@ -52,9 +53,9 @@
         </ul>
       </div>
       <button id="options-collapse"></button> 
-      <div id = "datapage">
-        <h3 id = "title">{{ name }}</h3>
-        <div id = "data">
+      <div id="datapage" class='near-white'>
+        <h3 id="title">{{ name }}</h3>
+        <div id="data">
           {{ body }}
         </div>
       </div>
