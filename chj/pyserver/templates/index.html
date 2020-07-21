@@ -13,22 +13,25 @@
 <body class='near-white'>
   <div id="mainpage">
     <header class='near-white'>
-    CodeHawk Java Analyzer
+    <a href='/'>
+      <img src="{{url_for('static', filename='images/codehawk-logo2.png')}}" width="50" height="50">
+      CodeHawk Java Analyzer
+    </a>
     </header>
     <nav class='near-white'>
-      <div>
-        <ul>
-          <li><a href="/"><i class='fas fa-home'></i></a></li>
-          <li id="navpr" class="selected">Classes</li>
-          <li id="navlo">Loops</li>
-          <li id="navbr">Branches</li>
-          <li id="navco">Costs</li>
-          <li id="navst">Strings</li>
-          <li id="navex">Exceptions</li>
-          <li id="navrec">Recursive Methods</li>
-          <li id="navref">Reflective Calls</li>
-          <li id="navsfinit">Initializers</li>
-          <li id="navta">Taints</li>
+      <div class='flex justify-right'>
+        <!-- <a href="/"><i class='fas fa-home'></i></a> -->
+        <ul class='flex'>
+          <li id="navpr" class='selected link'>Classes</li>
+          <li id="navlo" class='link'>Loops</li>
+          <li id="navbr" class='link'>Branches</li>
+          <li id="navco" class='link'>Costs</li>
+          <li id="navst" class='link'>Strings</li>
+          <li id="navex" class='link'>Exceptions</li>
+          <li id="navrec" class='link'>Recursive Methods</li>
+          <li id="navref" class='link'>Reflective Calls</li>
+          <li id="navsfinit" class='link'>Initializers</li>
+          <li id="navta" class='link'>Taints</li>
         </ul>
       </div>
     </nav>

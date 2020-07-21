@@ -18,6 +18,7 @@ var TaintOrigins = {
 
         var table = document.createElement('table');
         table.setAttribute('id', 'datatable');
+        table.classList.add('balanced');
 
         var header_row = document.createElement('tr');
         Util.add_table_header('Taint Origin', header_row);

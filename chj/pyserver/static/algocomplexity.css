@@ -1,19 +1,23 @@
+header {
+    border-top: 1px solid black;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    color: Black;
+    padding: 15px;
+    margin: 10px 10px 0px 10px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
 /* =====================================================================
  * main page
  * ---------------------------------------------------------------------
  */
-#mainpage {
-    padding-top: 5px;
-    padding-bottom: 5px;
-    background-color: SkyBlue;
-    text-align: left;
-}
-
 #maintableContainer {
     display: table;
-    margin: 0px auto 10px auto;
+    /* margin: 0px auto 10px auto; */
     border-spacing: 10px;
-    width: 98%;
+    width: 100%;
 }
 
 #maintableRow {
@@ -36,28 +40,12 @@
     border: 1px solid black;
     color: Black;
     display: table-cell;
-    font-size: 80%;
+    font-size: 90%;
     height: 90vh;
     padding: 5px;
     overflow: scroll;
     vertical-align: top;
 }
-
-/*
-*#sidebar {
-*    border: 1px solid black;
-*    display: table-cell;
-*    background-color: Seashell;
-*    color: Black;
-*    font-size: 80%;
-*    padding: 15px;
-*    margin: 0px auto 0px auto;
-*    overflow: scroll;
-*    height: 800px;
-*    vertical-align: text-top;
-*    width: 20%;
-*}
-*/
 
 #projects {
     list-style-type: none;

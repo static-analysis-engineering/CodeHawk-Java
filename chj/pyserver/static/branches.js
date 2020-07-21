@@ -47,7 +47,7 @@ var Branches = {
                 //MethodBytecode.link_to_method_bytecode(dinfo, cmsix);
 
                 if (i == 0) { drow.appendChild(dcondition); }
-                var dinfo = Util.add_table_data_with_link_mouseover(methodinfo, drow, MethodBytecode.get_link(cmsix));
+                var dinfo = Util.add_table_data_with_link(methodinfo, drow, MethodBytecode.get_link(cmsix));
 				dinfo.setAttribute('cmsix', cmsix);
                 
                 //drow.appendChild(dinfo);

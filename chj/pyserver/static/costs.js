@@ -23,6 +23,7 @@ var Costs = {
         if (Object.keys(topcosts).length > 0) {
             var table1 = document.createElement('table');
             table1.setAttribute('id', 'datatable');
+            table1.classList.add('balanced');
             var header_row = document.createElement('tr');
             Util.add_table_header('Cost', header_row);
             Util.add_table_header('Method', header_row);
@@ -37,7 +38,7 @@ var Costs = {
                 dcost.setAttribute('class', 'rightalign');
 
                 drow.appendChild(dcost);
-                Util.add_table_data_with_link_mouseover(cost[0], drow, MethodBytecode.get_link(cmsix));
+                Util.add_table_data_with_link(cost[0], drow, MethodBytecode.get_link(cmsix));
 
                 table1.appendChild(drow);
             }
@@ -48,6 +49,7 @@ var Costs = {
         if (Object.keys(constantcosts).length > 0) {
             var table2 = document.createElement('table');
             table2.setAttribute('id', 'datatable');
+            table2.classList.add('balanced');
             var header_row = document.createElement('tr');
             Util.add_table_header('Cost', header_row);
             Util.add_table_header('Method', header_row);
@@ -62,7 +64,7 @@ var Costs = {
                 dcost.setAttribute('class', 'rightalign');
 
                 drow.appendChild(dcost);
-                Util.add_table_data_with_link_mouseover(cost[0], drow, MethodBytecode.get_link(cmsix));
+                Util.add_table_data_with_link(cost[0], drow, MethodBytecode.get_link(cmsix));
 
                 table2.appendChild(drow);
             }
@@ -73,6 +75,7 @@ var Costs = {
         if (Object.keys(rangecosts).length > 0) {
             var table3 = document.createElement('table');
             table3.setAttribute('id', 'datatable');
+            table3.classList.add('balanced');
             var header_row = document.createElement('tr');
             Util.add_table_header('lower-bound', header_row);
             Util.add_table_header('upper-bound', header_row);
@@ -94,7 +97,7 @@ var Costs = {
 
                 drow.appendChild(dlb);
                 drow.appendChild(dub);
-                Util.add_table_data_with_link_mouseover(cost[0], drow, MethodBytecode.get_link(cmsix));
+                Util.add_table_data_with_link(cost[0], drow, MethodBytecode.get_link(cmsix));
 
                 table3.appendChild(drow);
             }

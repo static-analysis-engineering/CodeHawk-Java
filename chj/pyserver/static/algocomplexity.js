@@ -277,11 +277,11 @@ function loadtaintorigins(engagement, project) {
 
 function select_project(engagement, name) {
     if (GuiState.engagement && GuiState.project) {
-        document.getElementById(GuiState.engagement + GuiState.project).removeAttribute('class');
+        document.getElementById(GuiState.engagement + GuiState.project).classList.remove('xselected');
     }
 
     var next = document.getElementById(engagement + name);
-    next.setAttribute('class','xselected');
+    next.classList.add('xselected');
 
 	GuiState.setProject(engagement, name);
     if (GuiState.navselected == 'navlo') { 
@@ -318,11 +318,11 @@ function select_project(engagement, name) {
 
 function select_nav(navitem) {
     if (GuiState.navselected) {
-        document.getElementById(GuiState.navselected).removeAttribute('class');
+        document.getElementById(GuiState.navselected).classList.remove('selected');
     }
 
     var next = document.getElementById(navitem);
-    next.setAttribute('class', 'selected');
+    next.classList.add('selected');
 
     GuiState.navselected = navitem;
 
@@ -375,6 +375,7 @@ function addprojectlist(response) {
             })
             xlistitem.setAttribute('eng', engagementname);
             xlistitem.setAttribute('exe', projectname);
+            xlistitem.classList.add('link');
             xlistitem.id = engagementname + projectname;
             xspanitem.innerText = projectname;
             xlistitem.appendChild(xspanitem);

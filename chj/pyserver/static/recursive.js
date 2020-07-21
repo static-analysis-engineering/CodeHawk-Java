@@ -23,6 +23,7 @@ var Recursive = {
         if (recursivecalls.length > 0) {
             var table1 = document.createElement('table');
             table1.setAttribute('id', 'datatable');
+            table1.classList.add('balanced')
             var header_row = document.createElement('tr');
             Util.add_table_header("Self-Recursive Methods", header_row);
             table1.appendChild(header_row);
@@ -32,7 +33,7 @@ var Recursive = {
 
                 var cmsix = recursivecalls[i][0];
                 var methodname = Util.build_method_name(recursivecalls[i][1], cmsix);
-                Util.add_table_data_with_link_mouseover(methodname, drow, MethodBytecode.get_link(cmsix));
+                Util.add_table_data_with_link(methodname, drow, MethodBytecode.get_link(cmsix));
 
                 table1.appendChild(drow);
             }
@@ -43,6 +44,7 @@ var Recursive = {
         if (mutualrecursivecalls.length > 0) {
             var table2 = document.createElement('table');
             table2.setAttribute('id', 'datatable');
+            table2.classList.add('balanced');
             var header_row = document.createElement('tr');
             Util.add_span_table_header("Mutually Recursive Methods", header_row, 2);
             table2.appendChild(header_row);
@@ -54,8 +56,8 @@ var Recursive = {
                 var calleecmsix = mutualrecursivecalls[i][2];
                 var callername = Util.build_method_name(mutualrecursivecalls[i][1], callercmsix);
                 var calleename = Util.build_method_name(mutualrecursivecalls[i][3], calleecmsix);
-                Util.add_table_data_with_link_mouseover(callername, drow, MethodBytecode.get_link(callercmsix));
-                Util.add_table_data_with_link_mouseover(calleename, drow, MethodBytecode.get_link(calleecmsix));
+                Util.add_table_data_with_link(callername, drow, MethodBytecode.get_link(callercmsix));
+                Util.add_table_data_with_link(calleename, drow, MethodBytecode.get_link(calleecmsix));
 
                 table2.appendChild(drow);
             }
@@ -66,6 +68,7 @@ var Recursive = {
         if (recursive2cycles.length > 0) {
             var table3 = document.createElement('table');
             table3.setAttribute('id', 'datatable');
+            table3.classList.add('balanced');
             var header_row = document.createElement('tr');
             Util.add_span_table_header("Size 2 cycles", header_row, 3);
             table3.appendChild(header_row);
@@ -83,9 +86,9 @@ var Recursive = {
                 var calleename = Util.build_method_name(recursive2cycles[i][3], calleecmsix);
                 var subcalleename = Util.build_method_name(recursive2cycles[i][5], subcalleecmsix);
 
-                var dcaller = Util.add_table_data_with_link_mouseover(callername, drow1, MethodBytecode.get_link(callercmsix));
-                var dcallee = Util.add_table_data_with_link_mouseover("==> " + calleename, drow2, MethodBytecode.get_link(calleecmsix));
-                var dsubcallee = Util.add_table_data_with_link_mouseover("====> " + subcalleename, drow3, MethodBytecode.get_link(subcalleecmsix));
+                var dcaller = Util.add_table_data_with_link(callername, drow1, MethodBytecode.get_link(callercmsix));
+                var dcallee = Util.add_table_data_with_link("==> " + calleename, drow2, MethodBytecode.get_link(calleecmsix));
+                var dsubcallee = Util.add_table_data_with_link("====> " + subcalleename, drow3, MethodBytecode.get_link(subcalleecmsix));
 
                 dcaller.style.border = '1px black';
                 dcallee.style.border = '1px black';

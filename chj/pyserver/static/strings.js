@@ -39,7 +39,7 @@ var Strings = {
                     var dname_text = document.createTextNode(methodname);
                     dname.appendChild(dname_text);
 
-                    var dname = Util.add_table_data_with_link_mouseover(methodname, drow, MethodBytecode.get_link(cmsix));
+                    var dname = Util.add_table_data_with_link(methodname, drow, MethodBytecode.get_link(cmsix));
                     dname.rowSpan = Object.keys(pcs).length;
                 
                     //MethodBytecode.link_to_method_bytecode(dname, cmsix);

@@ -10,21 +10,23 @@
 <link rel="stylesheet" href="{{url_for('static',filename='globals.css') }}">
 <script src="{{url_for('static',filename='method.js')}}" type="module"></script>
 </head>
-
 <body>
   <div id="mainpage" eng={{ eng }} proj={{ proj }} index={{ index }}>
   <!-- <div id="mainpage"> -->
     <header class='near-white'>
-    CodeHawk Java Analyzer
+    <a href='/'>
+      <img src="{{url_for('static', filename='images/codehawk-logo2.png')}}" width="50" height="50">
+      CodeHawk Java Analyzer
+    </a>
     </header>
     <nav class='near-white'>
-      <div>
-        <ul>
-          <li id="HOME"><a href="/methodbytecode/{{eng}}/{{proj}}/{{index}}">HOME</a></li>
-          <li id="CFG">CFG</li>
-          <li id="CFG+COST">CFG+COST</li>
-          <li id="CG">CG</li>
-          <li id="REVCG">REVCG</li>
+      <div class='flex justify-right'>
+        <ul class='flex'>
+          <li id='Bytecode' class='link selected'><a href="/methodbytecode/{{eng}}/{{proj}}/{{index}}">Bytecode</a></li>
+          <li id='CFG' class='link'>CFG</li>
+          <li id='CFG+COST' class='link'>CFG+COST</li>
+          <li id='CG' class='link'>CG</li>
+          <li id='REVCG' class='link'>REVCG</li>
         </ul>
       </div>
     </nav>

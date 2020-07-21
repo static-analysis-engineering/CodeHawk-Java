@@ -492,7 +492,7 @@ def mk_class_code_table(f, engagement, project):
     table.set('id','codetable')
 
     mt = ET.Element('table')
-    mt.set('class', 'methodtable')
+    mt.set('class', 'methodtable balanced')
 
     headerrow = mk_header(['pc', 'instruction'])
     mt.append(headerrow)
@@ -549,7 +549,7 @@ def mk_method_code_table(f):
     table = ET.Element('div')
     table.set('id', 'codetable')
     mt = ET.Element('table')
-    mt.set('class','methodtable')
+    mt.set('class','methodtable balanced')
 
     headerrow = mk_header(['pc', 'instruction'])
     mt.append(headerrow)

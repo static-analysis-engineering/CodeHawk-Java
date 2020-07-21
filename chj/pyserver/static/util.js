@@ -35,23 +35,23 @@ var Util = {
         return node
     },
 
-    add_table_data_with_link_mouseover : function(txt, row, linktxt) {
-        var node = document.createElement('td');
-        var link = document.createElement('a');
-        link.setAttribute('href',linktxt);
-        link.setAttribute('target','_blank');
-        link.textContent = txt;
-        node.appendChild(link);
+    //add_table_data_with_link_mouseover : function(txt, row, linktxt) {
+    //    var node = document.createElement('td');
+    //    var link = document.createElement('a');
+    //    link.setAttribute('href',linktxt);
+    //    link.setAttribute('target','_blank');
+    //    link.textContent = txt;
+    //    node.appendChild(link);
 
-        link.addEventListener("mouseover", function() { this.classList.add('mousedover');});
-        link.addEventListener("mouseout", function() { this.classList.remove('mousedover');});
+    //    link.addEventListener("mouseover", function() { this.classList.add('mousedover');});
+    //    link.addEventListener("mouseout", function() { this.classList.remove('mousedover');});
 
-        row.appendChild(node);
+    //    row.appendChild(node);
 
-        return node
-    },
+    //    return node
+    //},
 
-    replace_node_text_with_link_mouseover : function(txt, node, linktxt) {
+    replace_node_text_with_link: function(txt, node, linktxt) {
         var link = document.createElement('a');
         link.setAttribute('href',linktxt);
         link.setAttribute('target','_blank');
@@ -59,8 +59,8 @@ var Util = {
         node.textContent = "";
         node.appendChild(link);
 
-        link.addEventListener("mouseover", function() { this.classList.add('mousedover');});
-        link.addEventListener("mouseout", function() { this.classList.remove('mousedover');});
+        //link.addEventListener("mouseover", function() { this.classList.add('mousedover');});
+        //link.addEventListener("mouseout", function() { this.classList.remove('mousedover');});
     },
 
     add_table_header : function(txt,row) {

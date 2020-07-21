@@ -23,7 +23,8 @@ var Classes = {
 
         var table = document.createElement('table');
         table.setAttribute('id','datatable');
-        table.setAttribute('class', 'classtable');
+        table.classList.add('classtable');
+        table.classList.add('balanced');
 
         var header_row = document.createElement('tr');
         Util.add_table_header('Classes', header_row);
@@ -37,7 +38,7 @@ var Classes = {
 			var txt = classname + " ( " + cnix + " ) ";
 			var linktxt = "/bytecode/" + GuiState.engagement + "/" + GuiState.project + "/" + cnix;
 
-			Util.add_table_data_with_link_mouseover(txt, drow, linktxt);
+			Util.add_table_data_with_link(txt, drow, linktxt);
 
             //drow.style.border = '0px';
             //dname.style.border = '0px';

@@ -1,28 +1,20 @@
 body {
-    font-family: sans-serif;
-}
-
-header {
-    border: 1px solid black;
-    color: Black;
-    padding: 15px;
-    margin: 10px 10px 0px 10px;
-    font-size: 1.5rem;
+    font-family: avenir next, avenir, sans-serif;
 }
 
 footer {
-    background-color: SkyBlue;
+    background-color: SteelBlue;
     color: Black;
     text-align: center;
     padding: 15px;
-    margin: 0px 10px 10px 10px;
+    margin: 10px 10px 0px 10px;
     font-size: 90%;
     clear: left;
 }
 
 h2 {
-    font-size: 110%;
-    color: #954b4b;
+    font-size: 120%;
+    color: Black;
 }
 
 h3 {
@@ -34,30 +26,58 @@ h3 {
 }
 
 /* =====================================================================
+ * Main page
+ * ---------------------------------------------------------------------
+ */
+
+#mainpage {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    background-color: SteelBlue;
+    text-align: left;
+}
+
+#maintableContainer { 
+    display: table;
+    /* margin: 0px auto 10px auto; */
+    border-spacing: 10px;
+    width: 100%;
+}
+
+/* =====================================================================
  * Navigation bar
  * ---------------------------------------------------------------------
  */
 
 nav {
-    border: 1px solid black;
+    border-top: 0px;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    border-bottom: 1px solid black;
     color: Black;
-    margin: 10px 10px 0px 10px;
+    margin: 0px 10px 0px 10px;
     font-size: 1rem;
+    top: 0;
+    position: sticky;
+    position: -webkit-sticky;
 }
 
 nav div ul {
     margin: 0px;
     list-style-type: none;
-    padding: 5px 0px 5px 0px;
 }
 
 nav div ul li {
     display: inline;
-    padding: 5px;
+    padding: 7px;
+    font-weight: 500;
 }
 
 nav div ul li.selected {
-    background-color: #b5a789;
+    background-color: #d6cfbf;
+    border-top: 1.5px solid black;
+    border-right: 1.5px solid black;
+    border-left: 1.5px solid black;
 }
 
 /* =====================================================================
@@ -66,6 +86,7 @@ nav div ul li.selected {
  */
 
 table {
+    background-color: #f0f0f0;
     overflow: scroll;
     margin: 10px;
 }
@@ -75,17 +96,34 @@ table, th, td {
     border-collapse: collapse;
 }
 
+.balanced tr:nth-child(even) {
+    background-color: #f4f4f4;
+}
+
+.balanced tr:nth-child(odd) {
+    background-color: #eaeaec;
+}
+
 th, td {
     /*border: 1px solid black;*/
     padding: 5px 15px 5px 15px;
     display: inline-block table-cell;
 }
 
-td.clickable, a {
+a {
+    text-decoration: none;
+}
+
+td a {
     cursor: pointer;
     color: #0000B0;
     text-decoration: none;
 }
+
+td a:hover {
+    text-decoration: underline;
+}
+
 
 td.breakable {
     word-wrap: break-word;
@@ -182,13 +220,30 @@ svg {
 }
 
 .xselected span {
-    background-color: #b5a789;
-}
-
-.mousedover {
-    background-color: #b5a789;
+    background-color: #d6cfbf;
 }
 
 .near-white {
     background-color: #f4f4f4;
+}
+
+.link:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.flex {
+    display: flex;
+}
+
+.justify-between {
+    justify-content: space-between;
+    -moz-justify-content: space-between;
+    -webkit-justify-content: space-between;
+}
+
+.justify-right {
+    justify-content: flex-end;
+    -moz-justify-content: flex-end;
+    -webkit-justify-content: flex-end;
 }

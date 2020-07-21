@@ -54,7 +54,7 @@ var SFInits = {
                     dpc.textContent = initdict[cnix][fsix][cmsix][0];
                     drow.appendChild(dpc);
                     var cms = initdict[cnix][fsix][cmsix][1];
-                    Util.add_table_data_with_link_mouseover(cms, drow, MethodBytecode.get_link(cmsix));
+                    Util.add_table_data_with_link(cms, drow, MethodBytecode.get_link(cmsix));
                     table.appendChild(drow);
                 }
 
@@ -71,7 +71,7 @@ var SFInits = {
                         dpc.textContent = readerdict[cnix][fsix][cmsix][0];
                         drow.appendChild(dpc);
                         var cms = readerdict[cnix][fsix][cmsix][1];
-                        Util.add_table_data_with_link_mouseover(cms, drow, MethodBytecode.get_link(cmsix));
+                        Util.add_table_data_with_link(cms, drow, MethodBytecode.get_link(cmsix));
                         table.appendChild(drow);
                     }
                 }

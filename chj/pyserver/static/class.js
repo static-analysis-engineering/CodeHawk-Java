@@ -10,7 +10,7 @@ var navengagement = null;
 var navproject = null;
 var cmsix = null;
 
-function addlinks() {
+function add_links() {
     var methodnodes = document.getElementsByName('method');
     var l = methodnodes.length;
 
@@ -20,7 +20,7 @@ function addlinks() {
        var linktxt = MethodBytecode.get_link(cmsix);
        var txt = methodnode.textContent;
 
-       Util.replace_node_text_with_link_mouseover(txt, methodnode, linktxt);
+       Util.replace_node_text_with_link(txt, methodnode, linktxt);
     }
 }
 
@@ -29,4 +29,4 @@ navproject = document.getElementById('mainpage').getAttribute('proj');
 cmsix = document.getElementById('mainpage').getAttribute('index');
 
 GuiState.setProject(navengagement, navproject)
-window.onload = addlinks();
+window.onload = add_links();

@@ -21,6 +21,7 @@ var Reflective = {
 
         var table = document.createElement('table');
         table.setAttribute('id', 'datatable');
+        table.classList.add('balanced');
 
         var header_row = document.createElement('tr');
         Util.add_table_header('Method', header_row);
@@ -47,7 +48,7 @@ var Reflective = {
 
                 dpc.setAttribute('class', 'rightalign');
 
-                Util.add_table_data_with_link_mouseover(methodname, drow, MethodBytecode.get_link(cmsix));
+                Util.add_table_data_with_link(methodname, drow, MethodBytecode.get_link(cmsix));
                 //drow.appendChild(dname);
                 drow.appendChild(dpc);
                 drow.appendChild(dcall)

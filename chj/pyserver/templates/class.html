@@ -15,26 +15,22 @@
   <div id="mainpage" eng={{ eng }} proj={{ proj }} index={{ index }}>
   <!-- <div id="mainpage"> -->
     <header class='near-white'>
-    CodeHawk Java Analyzer
+    <a href='/'>
+      <img src="{{url_for('static', filename='images/codehawk-logo2.png')}}" width="50" height="50">
+      CodeHawk Java Analyzer
+    </a>
     </header>
-    <nav class='near-white'>
-      <div>
-        <ul>
-          <li id="HOME"><a href="/bytecode/{{eng}}/{{proj}}/{{index}}">HOME</a></li>
-        </ul>
-      </div>
-    </nav>
-    <div id="container">
+    <div id="maintableContainer">
       <div id="datapage" class='near-white'>
         <h3 id="title">{{ name }}</h3>
         <div id="data">
           {{ body }}
         </div>
       </div>
+      <footer>
+      &copy; 2019, Kestrel Technology, LLC, Palo Alto, CA 94304
+      </footer>
     </div>
-    <footer>
-    &copy; 2019, Kestrel Technology, LLC, Palo Alto, CA 94304
-    </footer>
   </div>
 <hr>
 <address></address>

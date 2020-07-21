@@ -22,6 +22,7 @@ var Loops = {
 
         var table = document.createElement('table');
         table.setAttribute('id', 'datatable');
+        table.classList.add('balanced');
 
         var header_row = document.createElement('tr');
         Util.add_table_header_with_sort('#Loops', header_row, 'datatable', 0, Util.compareInt, Util.compareInt, true);
@@ -58,7 +59,7 @@ var Loops = {
 
             var methodname = sample["aqname"] + " (" + cmsix + ")";
             var linktxt = "/methodbytecode/" + GuiState.engagement + "/" + GuiState.project + "/" + cmsix;
-            Util.add_table_data_with_link_mouseover(methodname ,drow, linktxt);
+            Util.add_table_data_with_link(methodname ,drow, linktxt);
 
             table.appendChild(drow);
         }

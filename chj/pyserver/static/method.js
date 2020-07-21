@@ -2,7 +2,7 @@
 
 import { MethodBytecode } from './methodbytecode.js';
 
-var navselected = 'HOME';
+var navselected = 'Bytecode';
 //var navengagement = document.getElementById('mainpage').getAttribute('eng');
 //var navproject = document.getElementById('mainpage').getAttribute('proj');
 //var cmsix = document.getElementById('mainpage').getAttribute('cmsix');
@@ -109,15 +109,15 @@ function loadrevcg(navengagement, navproject, cmsix) {
 
 function select_nav(navitem) {
     if (navselected) {
-        document.getElementById(navselected).removeAttribute('class')
+        document.getElementById(navselected).classList.remove('selected')
     }
 
     var next = document.getElementById(navitem);
-    next.setAttribute('class', 'selected');
+    next.classList.add('class', 'selected');
 
     navselected = navitem;
 
-    if (navselected == 'HOME') {
+    if (navselected == 'Bytecode') {
         MethodBytecode.loadmethodbytecode(navengagement, navproject, cmsix);
     }
     else if (navselected == 'CFG') {
@@ -223,6 +223,7 @@ function add_links() {
             });
             var textnode = nodes[i].getElementsByTagName('text')[0];
             textnode.setAttribute('fill', 'blue');
+            textnode.classList.add('link');
         }
     }
 }
@@ -291,30 +292,34 @@ function zoom_on_scroll(event) {
     data.style.transformOrigin = '0% 0%';
 }
 
-var datapage = document.getElementById('datapage');
-datapage.addEventListener('wheel', function() {zoom_on_scroll(event)});
+function initialize() {
+    var datapage = document.getElementById('datapage');
+    datapage.addEventListener('wheel', function() {zoom_on_scroll(event)});
 
-var zoomin = document.getElementById('zoomin');
-zoomin.addEventListener('click', function() {zoom_in_graph()});
+    var zoomin = document.getElementById('zoomin');
+    zoomin.addEventListener('click', function() {zoom_in_graph()});
 
-var zoomout = document.getElementById('zoomout');
-zoomout.addEventListener('click', function() {zoom_out_graph()});
+    var zoomout = document.getElementById('zoomout');
+    zoomout.addEventListener('click', function() {zoom_out_graph()});
+
+    var gbsearch = document.getElementById('gbsearch');
+    gbsearch.addEventListener('click', function() {search_nodes()});
+
+    var loopbox = document.getElementById('loopsbox');
+    loopbox.addEventListener('change', function() {color_nodes()});
+
+    var costbox = document.getElementById('scostsbox');
+    costbox.addEventListener('change', function() {switch_costs()});
+
+    var bcollapse = document.getElementById('options-collapse');
+    bcollapse.addEventListener('click', function() {collapse()});
+}
+
+initialize();
 
 navengagement = document.getElementById('mainpage').getAttribute('eng');
 navproject = document.getElementById('mainpage').getAttribute('proj');
 cmsix = document.getElementById('mainpage').getAttribute('index');
-
-var gbsearch = document.getElementById('gbsearch');
-gbsearch.addEventListener('click', function() {search_nodes()});
-
-var loopbox = document.getElementById('loopsbox');
-loopbox.addEventListener('change', function() {color_nodes()});
-
-var costbox = document.getElementById('scostsbox');
-costbox.addEventListener('change', function() {switch_costs()});
-
-var bcollapse = document.getElementById('options-collapse');
-bcollapse.addEventListener('click', function() {collapse()});
 
 add_nav_listener('CFG');
 add_nav_listener('CFG+COST');

@@ -2,17 +2,40 @@
  * main page
  * ---------------------------------------------------------------------
  */
+
+* {
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+}
+
+header {
+    border: 1px solid black;
+    color: Black;
+    padding: 15px;
+    margin: 10px 10px 0px 10px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
 #mainpage {
     padding-top: 5px;
     padding-bottom: 5px;
-    background-color: SkyBlue;
+    background-color: SteelBlue;
     text-align: left;
+}
+
+#maintableContainer {
+    display: table;
+    /* margin: 0px auto 10px auto; */
+    border-spacing: 10px;
+    width: 100%;
 }
 
 #container {
     margin: 0px auto 10px auto;
-    border-spacing: 10px;
-    width: 98%;
+    /* border-spacing: 10px; */
+    width: 100%;
     padding-top: 5px;
     padding-bottom: 5px;
 }
@@ -22,28 +45,7 @@
     color: #675c47;
     display: block;
     font-size: 80%;
-    float: right;
-    margin: 0px 10px 10px 10px;
+    /* margin: 0px 10px 10px 10px; */
     overflow: scroll;
     padding: 15px;
-    width: 100%;
-}
-
-#sidebar {
-    border: 1px solid black;
-    background-color: #f4f4f4;
-    color: Black;
-    font-size: 80%;
-    float: left;
-    height: 800px;
-    overflow: scroll; 
-    padding: 5px;
-    width: 18%;
-}
-
-#projects {
-    list-style-type: none;
-    margin: 10px;
-    padding: 0;
-    cursor: pointer;
 }
