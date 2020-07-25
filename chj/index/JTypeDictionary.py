@@ -60,7 +60,7 @@ constant_value_constructors = {
     }
 
 method_handle_type_constructors = {
-    'f': lambda x:JT.FieldHand(*x),
+    'f': lambda x:JT.FieldHandle(*x),
     'm': lambda x:JT.MethodHandle(*x),
     'i': lambda x:JT.InterfaceHandle(*x)
     }
@@ -71,7 +71,7 @@ constant_constructors = {
     'm': lambda x:JT.ConstMethod(*x),
     'i': lambda x:JT.ConstInterfaceMethod(*x),
     'd': lambda x:JT.ConstDynamicMethod(*x),
-    'n': lambda x:JT.ConstNameAndType(*xs),
+    'n': lambda x:JT.ConstNameAndType(*x),
     's': lambda x:JT.ConstStringUTF8(*x),
     'h': lambda x:JT.ConstMethodHandle(*x),
     't': lambda x:JT.ConstMethodType(*x),

@@ -92,9 +92,6 @@ class ConstrainedVirtualTargets(CallgraphTargetBase):
     def get_application_targets(self):
         return [ cnix for cnix in self.cnixs if self.cgd.jd.is_application_class(cnix) ]
 
-    def get_application_targets(self):
-        return [ cnix for cnix in self.cnixs if self.cgd.jd.is_application_class(cnix) ]
-
     def is_virtual_target(self): return True
 
     def __str__(self): return 'cv:' + '; '.join(self.get_class_names()) + ' (' + str(self.get_tag()) + ')'
