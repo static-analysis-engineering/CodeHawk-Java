@@ -39,7 +39,7 @@ jterm_constructors = {
     'of': lambda x:JT.JTObjectFieldValue(*x),
     'bc': lambda x:JT.JTBoolConstant(*x),
     'fc': lambda x:JT.JTFloatConstant(*x),
-    'sc': lambda x:JT.JTJTermStringConstant(*x),
+    'sc': lambda x:JT.JTermStringConstant(*x),
     'al': lambda x:JT.JTArrayLength(*x),
     'sl': lambda x:JT.JTStringLength(*x),
     'si': lambda x:JT.JTSize(*x),
