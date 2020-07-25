@@ -51,25 +51,6 @@ class CHJError(CHError):
     def __init__(self,msg):
         CHError.__init__(self,msg)
 
-class CHJAnalyzerNotFoundError(CHJError):
-
-    def __init__(self,location):
-        CHJError.__init__(self,'CodeHawk Java Analyzer executable not found at ' + location)
-
-class CHJGuiNotFoundError(CHJError):
-
-    def __init__(self,location):
-        CHJError.__init__(self,'CodeHawk Java Analyzer Gui not found')
-        self.location = location
-
-    def __str__(self):
-        if location is None:
-            return ('Location of the CodeHawk Java Gui has not been set in ConfigLocal.\n'
-                        + ' Please assign the location of the gui executable as '
-                        + ' config.chj_gui in util/ConfigLocal.py')
-        else:
-            return ('CodeHawk C Gui executable not found at ' + location)
-
 class CHJFileNotFoundError(CHJError):
 
     def __init__(self,filename):
