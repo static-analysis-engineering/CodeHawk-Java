@@ -83,10 +83,6 @@ class JavaMethod(object):
         self._read_method_bytecode()
         return self.exceptiontable
 
-    def get_instructions(self):
-        self._read_method_bytecode()
-        return self.instructions.values()
-
     def get_pcs(self):
         self._read_method_bytecode()
         return sorted(self.instructions.keys())
