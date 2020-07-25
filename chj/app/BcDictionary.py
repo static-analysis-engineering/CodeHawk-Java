@@ -65,7 +65,7 @@ opcode_constructors = {
     'ifcmpane': lambda x: BC.BcIfCmpANe(*x),
     'goto': lambda x: BC.BcGoto(*x),
     'jsr': lambda x: BC.BcJsr(*x),
-    'jret': lambda x: BC.BcJRet(*x),
+    'jret': lambda x: BC.BcRet(*x),
     'table': lambda x: BC.BcTableSwitch(*x),
     'lookup': lambda x: BC.BcLookupSwitch(*x),
     'new': lambda x: BC.BcNew(*x),
