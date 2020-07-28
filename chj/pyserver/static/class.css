@@ -49,3 +49,12 @@ header {
     overflow: scroll;
     padding: 15px;
 }
+
+#title {
+    background-color: #f4f4f4;
+    border: 1px solid black;
+    color: Black;
+    font-size: 20px;
+    margin: 0px 0px 30px 0px;
+    text-align: center;
+}

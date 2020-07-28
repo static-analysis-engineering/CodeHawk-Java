@@ -1,4 +1,4 @@
-//Branches
+//MethodBytecode
 
 "use strict";
 
@@ -10,13 +10,13 @@ var MethodBytecode = {
     	//var restoringCall = "loadmethodbytecode('" + engagement + "','" + project + "','" + cmsix + "')";
     	//save_history(restoringCall, "methodbytecode");
 
-        var url = "/methodbytecode/" + engagement + "/" + project + "/" + cmsix;
+        var url = "/method/" + engagement + "/" + project + "/" + cmsix;
         var request = new XMLHttpRequest();
         request.onload = function() {
             if (request.status == 200) {
                 var response = JSON.parse(request.responseText);
                 if (response['meta']['status'] == 'ok') {
-                    MethodBytecode.addmethodbytecode(response['content']);
+                    MethodBytecode.addmethodbytecode(response['content']['body']);
                 } else {
                     alert('Server Error');
                 }
@@ -33,6 +33,8 @@ var MethodBytecode = {
     addmethodbytecode : function(response) {
         var datapage = document.getElementById('datapage');
         var data = document.getElementById('data');
+
+        datapage.classList.add('dataview');
 
         var new_bytecode_data = this.get_method_bytecode_data(response);
 
@@ -54,13 +56,13 @@ var MethodBytecode = {
         Util.add_table_header('Instruction', header_row);
         table.appendChild(header_row);
 
-        for (var i = 0; i < bytecodes.length; i++) {
-            var bytecode = bytecodes[i];
+        for (var pc in bytecodes) {
+            var instr = bytecodes[pc];
 
             var drow = document.createElement('tr');
 
-            Util.add_table_borderless(bytecode[0], drow);
-            Util.add_table_borderless(bytecode[1], drow);
+            Util.add_table_borderless(pc, drow);
+            Util.add_table_borderless(instr, drow);
 
             table.appendChild(drow);
         }

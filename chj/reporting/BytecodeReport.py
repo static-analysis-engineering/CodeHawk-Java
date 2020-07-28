@@ -43,6 +43,13 @@ class BytecodeReport(object):
             lines.append([str(pc), str(instr)])
         return lines
 
+    def as_dictionary(self):
+        jmethod = self.app.get_method(self.cmsix)
+        instrs = jmethod.instructions
+        result = {}
+        for pc in sorted(instrs):
+            result[str(pc)] = str(instrs[pc])
+        return result
 
     def to_string(self,showstack=False,showtargets=False,showinvariants=False):
         jmethod = self.app.get_method(self.cmsix)

@@ -11,6 +11,9 @@ var navengagement = null;
 var navproject = null;
 var cmsix = null;
 
+var mouseX = null;
+var mouseY = null;
+
 function loadcfg(navengagement, navproject, cmsix) {
     var url = "/methodcfg/" + navengagement + "/" + navproject + "/" + cmsix;
     var request = new XMLHttpRequest();
@@ -138,9 +141,13 @@ function addsvg(response) {
     var datapage = document.getElementById('datapage');
     var prdata = document.getElementById('data');
 
+    datapage.classList.add('graphview');
+
     var new_svg_data = get_svg_data(response['svg']);
 
     datapage.replaceChild(new_svg_data, prdata);
+
+    datapage.addEventListener('mousedown', function() {drag_element(event)});
 }
 
 function get_svg_data(response) {
@@ -237,64 +244,137 @@ function reset_fill() {
 }
 
 function collapse() {
-    var collapsed = document.getElementById('sidebar').classList.toggle('collapsed');
-    if (collapsed == true) {
-        document.getElementById('datapage').style.width = '98%';
+    document.getElementById('sidebar').classList.toggle('collapsed');
+
+    document.getElementById('container').classList.toggle('dataview');
+    document.getElementById('container').classList.toggle('fullview');
+}
+
+function build_scale_string(scale) {
+    var data = document.getElementById('data');
+    if (data.hasAttribute('trX') && data.hasAttribute('trY')) {
+        var trX = data.getAttribute('trX');
+        var trY = data.getAttribute('trY');
+        return build_transform_string(trX, trY, scale);
     } else {
-        document.getElementById('datapage').style.width = '80%';
+        data.setAttribute('scale', scale);
+        var transform = 'scale(' + scale + ',' + scale + ')';
+        return transform;
     }
+}
+
+function build_translate_string(trX, trY) {
+    var data = document.getElementById('data');
+    if (data.hasAttribute('scale')) {
+        var scale = data.getAttribute('scale');
+        return build_transform_string(trX, trY, scale);
+    } else {
+        data.setAttribute('trX', trX);
+        data.setAttribute('trY', trY);
+        var transform = 'translate(' + trX + 'px,' + trY + 'px)';
+        return transform
+    }
+}
+
+function build_transform_string(trX, trY, scale) {
+    var data = document.getElementById('data');
+    data.setAttribute('scale', scale);
+    data.setAttribute('trX', trX);
+    data.setAttribute('trY', trY);
+    var transform = 'translate(' + trX + 'px,' + trY + 'px) scale(' + scale + ',' + scale + ')';
+    return transform;
+}
+
+function drag_element(event) {
+    document.onmousemove = move_element;
+    document.onmouseup = stop_move;
+
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+}
+
+function move_element(event) {
+    var trX = event.clientX - mouseX;
+    var trY = event.clientY - mouseY;
+
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+
+    var data = document.getElementById('data');
+    if (data.hasAttribute('trX') && data.hasAttribute('trY')) {
+        var curX = parseInt(data.getAttribute('trX'), 10);
+        var curY = parseInt(data.getAttribute('trY'), 10);
+        trX = trX + curX;
+        trY = trY + curY;
+    }
+
+    var transform = build_translate_string(trX.toString(), trY.toString());
+    data.style.transform = transform;
+}
+
+//When mouse is released, page elements should no longer move
+function stop_move(event) {
+    document.onmousemove = null;
+    document.onmouseup = null;
 }
 
 function zoom_out_graph() {
     var data = document.getElementById('data');
-    var zoomstr = '90';
-    if (data.hasAttribute('zoom')) {
-        var zoom = parseInt(data.getAttribute('zoom'), 10);
-        if (zoom > 10) {
-            zoom = zoom - 10;
+    var zoomstr = '0.9';
+    if (data.hasAttribute('scale')) {
+        var zoom = parseFloat(data.getAttribute('scale'), 10);
+        if (zoom > 0.1) {
+            zoom = zoom - 0.1;
         }
         var zoomstr = zoom.toString();
     }
-    data.setAttribute('zoom', zoomstr);
-    data.style.transform = 'scale(' + zoomstr + '%,' + zoomstr + '%)';
-    data.style.transformOrigin = '50% 50%';
+    data.setAttribute('scale', zoomstr);
+
+    var new_scale = build_scale_string(zoomstr);
+    data.style.transform = new_scale;
+    data.style.webkitTransform = new_scale;
+    data.style.MozTransform = new_scale;
 }
 
 function zoom_in_graph() {
     var data = document.getElementById('data');
-    var zoomstr = '110';
-    if (data.hasAttribute('zoom')) {
-        var zoom = parseInt(data.getAttribute('zoom'), 10);
-        if (zoom < 200) {
-            zoom = zoom + 10;
+    var zoomstr = '1.1';
+    if (data.hasAttribute('scale')) {
+        var zoom = parseFloat(data.getAttribute('scale'), 10);
+        if (zoom < 2.0) {
+            zoom = zoom + 0.1;
         }
         var zoomstr = zoom.toString();
     }
-    data.setAttribute('zoom', zoomstr);
-    data.style.transform = 'scale(' + zoomstr + '%,' + zoomstr + '%)';
-    data.style.transformOrigin = '0% 0%';
+    data.setAttribute('scale', zoomstr);
+
+    var new_scale = build_scale_string(zoomstr);
+    data.style.transform = new_scale;
+    data.style.webkitTransform = new_scale;
+    data.style.MozTransform = new_scale;
+
 }
 
 function zoom_on_scroll(event) {
     var data = document.getElementById('data');
-    var zoomstr = '100';
-    if (data.hasAttribute('zoom')) {
+    var zoomstr = '1.0';
+    if (data.hasAttribute('scale')) {
         var delta = event.deltaY;
-        var zoom = parseInt(data.getAttribute('zoom'), 10) + delta;
-        if (zoom < 10) { zoom = 10; }
-        if (zoom > 200) { zoom = 200; }
+        var zoom = parseFloat(data.getAttribute('scale'), 10) + (delta / 100);
+        if (zoom < 0.1) { zoom = 1.0; }
+        if (zoom > 2.0) { zoom = 2.0; }
         var zoomstr = zoom.toString();
-        data.setAttribute('zoom', zoomstr);
+        data.setAttribute('scale', zoomstr);
     } else {
-        data.setAttribute('zoom', zoomstr);
+        data.setAttribute('scale', zoomstr);
     }
-    data.style.transform = 'scale(' + zoomstr + '%,' + zoomstr + '%)';
-    data.style.transformOrigin = '0% 0%';
+    data.style.transform = 'scale(' + zoomstr + ',' + zoomstr + ')';
+    //data.style.transformOrigin = '0% 0%';
 }
 
 function initialize() {
     var datapage = document.getElementById('datapage');
-    datapage.addEventListener('wheel', function() {zoom_on_scroll(event)});
+    //datapage.addEventListener('wheel', function() {zoom_on_scroll(event)});
 
     var zoomin = document.getElementById('zoomin');
     zoomin.addEventListener('click', function() {zoom_in_graph()});
@@ -321,6 +401,7 @@ navengagement = document.getElementById('mainpage').getAttribute('eng');
 navproject = document.getElementById('mainpage').getAttribute('proj');
 cmsix = document.getElementById('mainpage').getAttribute('index');
 
+add_nav_listener('Bytecode');
 add_nav_listener('CFG');
 add_nav_listener('CFG+COST');
 add_nav_listener('CG');

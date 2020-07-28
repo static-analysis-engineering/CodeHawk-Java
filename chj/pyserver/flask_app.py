@@ -298,18 +298,22 @@ def load_engagement_app(engagement, project):
     app = AP.AppAccess(path)
     return app
 
+def get_method_body(engagement, project, cmsix):
+    app = load_engagement_app(engagement, project)
+    mname = app.get_method(int(cmsix)).get_qname()
+    bytecodereport = BytecodeReport(app, int(cmsix)).as_list()
+    body = ET.tostring(mk_method_code_table(bytecodereport),
+                                        encoding='unicode', method='html')
+    return (mname, body)
+
 @app.route('/methodbytecode/<engagement>/<project>/<cmsix>')
 def load_method_bytecode(engagement, project, cmsix):
     result = {}
     result['meta'] = {}
-    try :
-        app = load_engagement_app(engagement, project)
-        mname = app.get_method(int(cmsix)).get_qname()
-        bytecodereport = BytecodeReport(app, int(cmsix)).as_list()
-        body = Markup(ET.tostring(mk_method_code_table(bytecodereport), 
-                                        encoding='unicode', method='html'))
+    try:
+        (mname, body) = get_method_body(engagement, project, cmsix)
         title = engagement + ":" + project + ":" + cmsix
-        template = render_template('method.html', title=title, body=body, name=mname, 
+        template = render_template('method.html', title=title, body=Markup(body), name=mname,
                                         eng=engagement, proj=project, index=cmsix)
     except Exception as e:
         result['meta']['status'] = 'fail'
@@ -318,6 +322,23 @@ def load_method_bytecode(engagement, project, cmsix):
         return jsonify(result)
     else:
         return template
+
+@app.route('/method/<engagement>/<project>/<cmsix>')
+def load_method(engagement, project, cmsix):
+    result = {}
+    result['meta'] = {}
+    try:
+        app=load_engagement_app(engagement, project)
+        bytecodereport = BytecodeReport(app, int(cmsix)).as_dictionary()
+    except Exception as e:
+        result['meta']['status'] = 'fail'
+        result['meta']['reason'] = print(e)
+        traceback.print_exc()
+    else:
+        result['meta']['status'] = 'ok'
+        result['content'] = {}
+        result['content']['body'] = bytecodereport
+    return jsonify(result)
 
 #@app.route('/bytecode/<engagement>/<project>/<cnix>')
 #def load_bytecode(engagement, project, cnix):
