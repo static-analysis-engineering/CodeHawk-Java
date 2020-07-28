@@ -15,6 +15,12 @@ header {
     padding: 15px;
 }
 
+svg {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* =====================================================================
  * main page
  * ---------------------------------------------------------------------
@@ -22,7 +28,7 @@ header {
 
 #container {
     display: grid;
-    grid-template-rows: auto minmax(60vh, auto);
+    grid-template-rows: 31px minmax(60vh, auto);
     margin: 5px 10px 10px 10px;
     padding-bottom: 5px;
     padding-top: 5px;
@@ -38,7 +44,7 @@ header {
     color: #675c47;
     font-size: 80%;
     grid-column: 3 / 4;
-    grid-row: 2 / 3 ;
+    grid-row: 2 / 3;
     padding-bottom: 8rem;
 }
 
