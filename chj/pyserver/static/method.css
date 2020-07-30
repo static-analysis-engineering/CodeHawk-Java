@@ -35,6 +35,7 @@ svg {
 }
 
 #title {
+    font-family: avenir next, avenir, sans-serif;
     grid-column: 3 / 4;
     grid-row: 1 / 2;
 }
@@ -45,7 +46,6 @@ svg {
     font-size: 80%;
     grid-column: 3 / 4;
     grid-row: 2 / 3;
-    padding-bottom: 8rem;
 }
 
 #sidebar {
@@ -99,6 +99,8 @@ svg {
 
 .graphview {
     overflow: hidden;
+    padding-bottom: 8rem;
+    padding-top: 2rem;
 }
 
 .fullview {

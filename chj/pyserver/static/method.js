@@ -147,6 +147,16 @@ function addsvg(response) {
 
     datapage.replaceChild(new_svg_data, prdata);
 
+    //If graph is wider than can be displayed, automatically shrink the graph;
+    var datawidth = datapage.offsetWidth;
+    var svgwidth = new_svg_data.scrollWidth;
+    if (svgwidth > datawidth) {
+        var scale = datawidth / svgwidth;
+        var transform = build_scale_string(scale);
+        data.style.transform = transform;
+        data.style.transformOrigin = '0% 0% 0px';
+    }
+
     datapage.addEventListener('mousedown', function() {drag_element(event)});
 }
 
