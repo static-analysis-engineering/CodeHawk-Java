@@ -57,7 +57,7 @@ var Bytecode = {
             Util.append_text_to_node(dname, method);
             dname.colSpan = 2;
 
-            /*var linktxt = "/methodbytecode/" + GuiState.engagement + "/" + GuiStateproject + "/" + cmsix;
+            /*var linktxt = "/method/" + GuiState.engagement + "/" + GuiStateproject + "/" + cmsix;
             dname = Util.add_table_data_with_link(method, drow, linktxt);
             dname.colSpan = 2;*/
 

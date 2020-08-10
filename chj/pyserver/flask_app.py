@@ -306,8 +306,8 @@ def get_method_body(engagement, project, cmsix):
                                         encoding='unicode', method='html')
     return (mname, body)
 
-@app.route('/methodbytecode/<engagement>/<project>/<cmsix>')
-def load_method_bytecode(engagement, project, cmsix):
+@app.route('/method/<engagement>/<project>/<cmsix>')
+def load_method(engagement, project, cmsix):
     result = {}
     result['meta'] = {}
     try:
@@ -323,41 +323,7 @@ def load_method_bytecode(engagement, project, cmsix):
     else:
         return template
 
-@app.route('/method/<engagement>/<project>/<cmsix>')
-def load_method(engagement, project, cmsix):
-    result = {}
-    result['meta'] = {}
-    try:
-        app=load_engagement_app(engagement, project)
-        bytecodereport = BytecodeReport(app, int(cmsix)).as_dictionary()
-    except Exception as e:
-        result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
-        traceback.print_exc()
-    else:
-        result['meta']['status'] = 'ok'
-        result['content'] = {}
-        result['content']['body'] = bytecodereport
-    return jsonify(result)
-
-#@app.route('/bytecode/<engagement>/<project>/<cnix>')
-#def load_bytecode(engagement, project, cnix):
-#    result = {}
-#    result['meta'] = {}
-#    try:
-#        app = load_engagement_app(engagement, project)
-#        bytecode = app.get_class(int(cnix)).as_dictionary()
-#    except Exception as e:
-#        result['meta']['status'] = 'fail'
-#        result['meta']['reason'] = print(e)
-#        traceback.print_exc()
-#    else:
-#        result['meta']['status'] = 'ok'
-#        result['content'] = bytecode
-#    return jsonify(result)
-
-
-@app.route('/bytecode/<engagement>/<project>/<cnix>')
+@app.route('/class/<engagement>/<project>/<cnix>')
 def load_bytecode(engagement, project, cnix):
     result = {}
     result['meta'] = {}
@@ -529,7 +495,7 @@ def mk_class_code_table(f, engagement, project):
             mdname.text = f[cmsix]['methodstring']
             mdname.set('cmsix', cmsix)
             mdname.set('name', 'method')
-            #linktxt = '/methodbytecode/' + engagement + '/' + project + '/' + cmsix
+            #linktxt = '/method/' + engagement + '/' + project + '/' + cmsix
             #mta.set('href', linktxt)
             #mta.set('target','_blank')
             #mdname.append(mta)

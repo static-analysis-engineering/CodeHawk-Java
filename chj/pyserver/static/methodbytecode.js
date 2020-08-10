@@ -27,7 +27,7 @@ var MethodBytecode = {
     },
 
     get_link : function(cmsix) {
-        return "/methodbytecode/" + GuiState.engagement + "/" + GuiState.project + "/" + cmsix;
+        return "/method/" + GuiState.engagement + "/" + GuiState.project + "/" + cmsix;
     },
 
     addmethodbytecode : function(response) {

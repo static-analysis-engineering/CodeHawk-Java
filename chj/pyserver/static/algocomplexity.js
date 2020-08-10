@@ -427,6 +427,18 @@ function addprojectlist(response) {
 //    historylock = false;
 //}
 
+function collapse() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+
+    document.getElementById('container').classList.toggle('dataview');
+    document.getElementById('container').classList.toggle('fullview');
+}
+
+function initialize() {
+    var bcollapse = document.getElementById('options-collapse');
+    bcollapse.addEventListener('click', function() {collapse()});
+}
+
 function add_nav_listener(tag) {
     document.getElementById(tag).addEventListener('click', function() {select_nav(tag)})
 }
@@ -441,6 +453,8 @@ add_nav_listener('navrec');
 add_nav_listener('navref');
 add_nav_listener('navsfinit');
 add_nav_listener('navta');
+
+initialize();
 
 GuiState.setState('navpr', null, null)
 window.onload = loadprojects()

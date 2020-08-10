@@ -58,7 +58,7 @@ var Loops = {
             drow.appendChild(dlooptaints);
 
             var methodname = sample["aqname"] + " (" + cmsix + ")";
-            var linktxt = "/methodbytecode/" + GuiState.engagement + "/" + GuiState.project + "/" + cmsix;
+            var linktxt = "/method/" + GuiState.engagement + "/" + GuiState.project + "/" + cmsix;
             Util.add_table_data_with_link(methodname ,drow, linktxt);
 
             table.appendChild(drow);

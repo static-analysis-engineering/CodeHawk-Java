@@ -34,31 +34,11 @@ var Classes = {
             var cnix = classnames[classname];
 
             var drow = document.createElement('tr');
-            //var dname = document.createElement('td');
 			var txt = classname + " ( " + cnix + " ) ";
-			var linktxt = "/bytecode/" + GuiState.engagement + "/" + GuiState.project + "/" + cnix;
+			var linktxt = "/class/" + GuiState.engagement + "/" + GuiState.project + "/" + cnix;
 
 			Util.add_table_data_with_link(txt, drow, linktxt);
 
-            //drow.style.border = '0px';
-            //dname.style.border = '0px';
-
-            //Util.append_text_to_node(dname, classname + " ( " + cnix + " ) ");
-
-			//var link = document.createElement('a');
-            //link.setAttribute('href', "/loadbytecode/" + navengagement + "/" + navproject);
-            //link.setAttribute('target', '_blank');
-
-            //var callee = "loadbytecode(" + '"' + navengagement + '","' + navproject + '","' + cnix + '"' + ")";
-            //var callee = "loadbytecode(" + '"' + currentState.engagement + '","' + currentState.project + '","' + cnix + '"' + ")";
-
-            //dname.addEventListener("click", function(navengagment, navproject) {
-            //    loadbytecode(navengagement, navproject)
-            //});
-            //dname.setAttribute("onclick",callee);
-            //dname.setAttribute("class", "clickable");
-
-            //drow.appendChild(dname)
             table.appendChild(drow);
         }
 

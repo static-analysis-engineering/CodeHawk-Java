@@ -52,7 +52,7 @@ nav {
     top: 0;
     position: sticky;
     position: -webkit-sticky;
-    z-index: 1;
+    z-index: 2;
 }
 
 nav div ul {
@@ -187,6 +187,14 @@ svg {
  * ---------------------------------------------------------------------
  */
 
+.dataview {
+    grid-template-columns: 18% 2% 80%;
+}
+
+.fullview {
+    grid-template-columns: 0% 2% 98%;
+}
+
 .caret {
     cursor: pointer;
     -moz-user-select: none;
@@ -231,12 +239,23 @@ svg {
 
 .justify-between {
     justify-content: space-between;
-    -moz-justify-content: space-between;
     -webkit-justify-content: space-between;
+}
+
+.justify-left {
+    justify-content: flex-start;
+    -webkit-justify-content: flex-start;
 }
 
 .justify-right {
     justify-content: flex-end;
-    -moz-justify-content: flex-end;
     -webkit-justify-content: flex-end;
+}
+
+.pl-10 {
+    padding-left: 10px;
+}
+
+.pr-10 {
+    padding-right: 10px;
 }

@@ -13,35 +13,34 @@ header {
  * main page
  * ---------------------------------------------------------------------
  */
-#maintableContainer {
-    display: table;
+#container {
+    display: grid;
     /* margin: 0px auto 10px auto; */
-    border-spacing: 10px;
-    width: 100%;
-}
-
-#maintableRow {
-    display: table-row;
-    border: 1px solid black;
+    margin: 5px 10px 10px 10px;
+    min-height: 70vh;
 }
 
 #datapage {
     border: 1px solid black;
-    display: table-cell;
     color: #675c47;
     font-size: 80%;
+    grid-column: 3 / 4;
+    grid-row: 1 / 2;
     padding: 15px;
-    margin: 0px 10px 10px 10px;
     vertical-align: top;
-    width: 80%;
+}
+
+#options-collapse {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
 }
 
 #sidebar {
     border: 1px solid black;
     color: Black;
-    display: table-cell;
     font-size: 90%;
-    height: 90vh;
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
     padding: 5px;
     overflow: scroll;
     vertical-align: top;

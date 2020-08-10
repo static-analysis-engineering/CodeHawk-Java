@@ -110,6 +110,28 @@ function loadrevcg(navengagement, navproject, cmsix) {
     request.send();
 }
 
+function hide_graph_aux() {
+    document.getElementById('zoomin').classList.add('hidden');
+    document.getElementById('zoomout').classList.add('hidden');
+    document.getElementById('options-collapse').classList.add('hidden');
+    document.getElementById('sidebar').classList.add('hidden');
+
+    var container = document.getElementById('container');
+    container.removeAttribute('class');
+    container.setAttribute('class', 'simpleview');
+}
+
+function show_graph_aux() {
+    document.getElementById('zoomin').classList.remove('hidden');
+    document.getElementById('zoomout').classList.remove('hidden');
+    document.getElementById('options-collapse').classList.remove('hidden');
+    document.getElementById('sidebar').classList.remove('hidden');
+
+    var container = document.getElementById('container');
+    container.removeAttribute('class');
+    container.setAttribute('class', 'dataview');
+}
+
 function select_nav(navitem) {
     if (navselected) {
         document.getElementById(navselected).classList.remove('selected')
@@ -121,19 +143,24 @@ function select_nav(navitem) {
     navselected = navitem;
 
     if (navselected == 'Bytecode') {
-        MethodBytecode.loadmethodbytecode(navengagement, navproject, cmsix);
+        //loadmethodbytecode(navengagement, navproject, cmsix);
+        hide_graph_aux();
     }
     else if (navselected == 'CFG') {
         loadcfg(navengagement, navproject, cmsix);
+        show_graph_aux();
     }
     else if (navselected == 'CFG+COST') {
         loadcfgcost(navengagement, navproject, cmsix);
+        show_graph_aux();
     }
     else if (navselected == 'CG') {
         loadcg(navengagement, navproject, cmsix);
+        show_graph_aux();
     }
     else if (navselected == 'REVCG') {
         loadrevcg(navengagement, navproject, cmsix);
+        show_graph_aux();
     }
 }
 
@@ -152,6 +179,7 @@ function addsvg(response) {
     var svgwidth = new_svg_data.scrollWidth;
     if (svgwidth > datawidth) {
         var scale = datawidth / svgwidth;
+        if (scale < 0.4) {scale = 0.4;}
         var transform = build_scale_string(scale);
         data.style.transform = transform;
         data.style.transformOrigin = '0% 0% 0px';
@@ -236,7 +264,7 @@ function add_links() {
         if (nodes[i].hasAttribute('cmsix')) {
             nodes[i].addEventListener('click', function() {
                 var tgtcmsix = parseInt(this.getAttribute('cmsix'), 10);
-                window.open("/methodbytecode/" + navengagement + "/" + navproject + "/" + tgtcmsix);
+                window.open("/method/" + navengagement + "/" + navproject + "/" + tgtcmsix);
             });
             var textnode = nodes[i].getElementsByTagName('text')[0];
             textnode.setAttribute('fill', 'blue');
@@ -383,6 +411,8 @@ function zoom_on_scroll(event) {
 }
 
 function initialize() {
+    hide_graph_aux();
+
     var datapage = document.getElementById('datapage');
     //datapage.addEventListener('wheel', function() {zoom_on_scroll(event)});
 
