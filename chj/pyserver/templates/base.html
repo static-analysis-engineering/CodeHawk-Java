@@ -1,0 +1,44 @@
+<!DOCTYPE HTML PUBLIC>
+<html>
+<head>
+<meta charset="utf-8">
+{% block title %}
+  <title>Algocomplexity</title>
+{% endblock %}
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+<link rel="stylesheet" href="{{url_for('static',filename='globals.css') }}">
+{% block imports %}{% endblock %}
+</head>
+
+<body class='near-white'>
+  <div id="mainpage" eng={{ eng }} proj={{ proj }} index={{ index }}>
+    <header class='near-white'>
+    <a href='/'>
+      <img src="{{url_for('static', filename='images/codehawk-logo2.png')}}" width="50" height="50">
+      CodeHawk Java Analyzer
+    </a>
+    </header>
+
+    {% block navbar %}{% endblock %}
+
+    {% block container %}
+      {% block sidebar %}{% endblock %}
+      {% block data %}
+          <h3 id="title">{{ name }}</h3>
+          <div id="datapage" class='near-white'>
+            <div id="data">
+              {{ body }}
+            </div>
+          </div>
+      {% endblock %}
+    {% endblock %}
+
+    <footer class='near-white'>
+    &copy; 2019, Kestrel Technology, LLC, Palo Alto, CA 94304
+    </footer>
+  </div>
+<hr>
+<address></address>
+<!-- hhmts start -->Last modified: Fri Mar  6 18:00:17 PST 2020 <!-- hhmts end -->
+</body> </html>

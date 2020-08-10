@@ -1,72 +1,63 @@
-<!DOCTYPE HTML PUBLIC>
-<html>
-<head>
-<meta charset="utf-8">
-<title>{{ title }}</title>
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<!-- <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"> -->
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
-<link rel="stylesheet" href="{{url_for('static',filename='method.css') }}">
-<link rel="stylesheet" href="{{url_for('static',filename='globals.css') }}">
-<script src="{{url_for('static',filename='method.js')}}" type="module"></script>
-</head>
-<body>
-  <div id="mainpage" eng={{ eng }} proj={{ proj }} index={{ index }}>
-  <!-- <div id="mainpage"> -->
-    <header class='near-white'>
-    <a href='/'>
-      <img src="{{url_for('static', filename='images/codehawk-logo2.png')}}" width="50" height="50">
-      CodeHawk Java Analyzer
-    </a>
-    </header>
-    <nav class='near-white'>
-      <div class='flex justify-right'>
-        <ul class='flex'>
-          <li id='Bytecode' class='link selected'><a href="/methodbytecode/{{eng}}/{{proj}}/{{index}}">Bytecode</a></li>
-          <li id='CFG' class='link'>CFG</li>
-          <li id='CFG+COST' class='link'>CFG+COST</li>
-          <li id='CG' class='link'>CG</li>
-          <li id='REVCG' class='link'>REVCG</li>
-        </ul>
-      </div>
-    </nav>
-    <div id="container" class='dataview'>
-      <div id="sidebar">
-        <ul id="options">
-          <li>
-            <label for="gsearch">Search Graph:</gsearch>
-            <input id="gsearch" type="text" name="gsearch">
-            <input id="gbsearch" type="button" value="Submit">
-          </li>
-          <li>
-            <input id="loopsbox" type="checkbox" name="loops">
-            <label for="loops">loops</label>
-          </li>
-          <li>
-            <input id="scostsbox" type="checkbox" name="scosts">
-            <label for="scosts">simple costs</label>
-          </li>
-          <li>
-            <button id="zoomin">Zoom In</button>
-          </li>
-          <li>
-            <button id="zoomout">Zoom Out</button>
-          </li>
-        </ul>
-      </div>
-      <button id="options-collapse"></button>
-      <h3 id="title">{{ name }}</h3>
-      <div id="datapage" class='near-white'>
-        <div id="data">
-          {{ body }}
-        </div>
+{% extends "base.html" %}
+
+{% block title %}
+  <title>{{ title }}</title>
+{% endblock %}
+
+{% block imports %}
+  <link rel="stylesheet" href="{{url_for('static',filename='method.css') }}">
+  <script src="{{url_for('static',filename='method.js')}}" type="module"></script>
+{% endblock %}
+
+{% block navbar %}
+  <nav class='near-white'>
+    <div class='flex justify-between'>
+      <ul class='flex pl-10'>
+        <li id='Bytecode' class='link selected'><a href="/method/{{eng}}/{{proj}}/{{index}}">Bytecode</a></li>
+        <li id='CFG' class='link'>CFG</li>
+        <li id='CFG+COST' class='link'>CFG+COST</li>
+        <li id='CG' class='link'>CG</li>
+       <li id='REVCG' class='link'>REVCG</li>
+      </ul>
+      <div class='flex pr-10'>
+        <label for="gsearch">Search:</gsearch>
+        <input id="gsearch" type="text" name="gsearch">
+        <input id="gbsearch" type="button" value="Submit">
       </div>
     </div>
-    <footer>
-    &copy; 2019, Kestrel Technology, LLC, Palo Alto, CA 94304
-    </footer>
+  </nav>
+{% endblock %}
+
+{% block container %}
+  <!-- Container's class is sometimes reset, be careful when adding classes here -->
+  <div id="container" class="simpleview">
+  {{ super() }}
   </div>
-<hr>
-<address></address>
-<!-- hhmts start -->Last modified: Wed Mar 20 10:49:49 PDT 2019 <!-- hhmts end -->
-</body> </html>
+{% endblock %}
+
+{% block sidebar %}
+  <div id="sidebar">
+    <ul id="options">
+      <li>
+        <input id="loopsbox" type="checkbox" name="loops">
+        <label for="loops">Loops</label>
+      </li>
+      <li>
+        <input id="scostsbox" type="checkbox" name="scosts">
+        <label for="scosts">Simple Costs</label>
+      </li>
+    </ul>
+  </div>
+  <button id="options-collapse"></button>
+{% endblock %}
+
+{% block data %}
+  <h3 id="title">{{ name }}</h3>
+  <div id="datapage" class='near-white'>
+    <button id="zoomin">+</button>
+    <button id="zoomout">-</button>
+    <div id="data">
+      {{ body }}
+    </div>
+  </div>
+{% endblock %}

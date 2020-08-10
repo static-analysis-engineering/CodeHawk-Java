@@ -1,60 +1,53 @@
-<!DOCTYPE HTML PUBLIC>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Algocomplexity</title>
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
-<link rel="stylesheet" href="{{url_for('static',filename='algocomplexity.css') }}">
-<link rel="stylesheet" href="{{url_for('static',filename='globals.css') }}">
-<script src="{{url_for('static',filename='algocomplexity.js')}}", type="module"></script>
-</head>
+{% extends "base.html" %}
 
-<body class='near-white'>
-  <div id="mainpage">
-    <header class='near-white'>
-    <a href='/'>
-      <img src="{{url_for('static', filename='images/codehawk-logo2.png')}}" width="50" height="50">
-      CodeHawk Java Analyzer
-    </a>
-    </header>
-    <nav class='near-white'>
-      <div class='flex justify-right'>
-        <!-- <a href="/"><i class='fas fa-home'></i></a> -->
-        <ul class='flex'>
-          <li id="navpr" class='selected link'>Classes</li>
-          <li id="navlo" class='link'>Loops</li>
-          <li id="navbr" class='link'>Branches</li>
-          <li id="navco" class='link'>Costs</li>
-          <li id="navst" class='link'>Strings</li>
-          <li id="navex" class='link'>Exceptions</li>
-          <li id="navrec" class='link'>Recursive Methods</li>
-          <li id="navref" class='link'>Reflective Calls</li>
-          <li id="navsfinit" class='link'>Initializers</li>
-          <li id="navta" class='link'>Taints</li>
-        </ul>
-      </div>
-    </nav>
-    <div id="maintableContainer">
-      <div id="maintableRow">
-        <div id="sidebar" class='near-white'>
-          <h2>Projects</h2>
-          <ul id="projects">
-          </ul>
-        </div>
-        <div id="datapage" class='near-white'>
-          <div id="prdata">
-            <table id="datatable">
-            </table>
-          </div>
-        </div>
-      </div>
+{% block title %}
+  {{ super() }}
+{% endblock %}
+
+{% block imports %}
+<link rel="stylesheet" href="{{url_for('static',filename='algocomplexity.css') }}">
+<script src="{{url_for('static',filename='algocomplexity.js')}}", type="module"></script>
+{% endblock %}
+
+{% block navbar %}
+  <nav class='near-white'>
+    <div class='flex justify-left'>
+      <ul class='flex pl-10'>
+        <li id="navpr" class='selected link'>Classes</li>
+        <li id="navlo" class='link'>Loops</li>
+        <li id="navbr" class='link'>Branches</li>
+        <li id="navco" class='link'>Costs</li>
+        <li id="navst" class='link'>Strings</li>
+        <li id="navex" class='link'>Exceptions</li>
+        <li id="navrec" class='link'>Recursive Methods</li>
+        <li id="navref" class='link'>Reflective Calls</li>
+        <li id="navsfinit" class='link'>Initializers</li>
+        <li id="navta" class='link'>Taints</li>
+      </ul>
     </div>
-    <footer class='near-white'>
-    &copy; 2019, Kestrel Technology, LLC, Palo Alto, CA 94304
-    </footer>
+  </nav>
+{% endblock %}
+
+{% block container %}
+  <div id="container" class="dataview">
+  {{ super() }}
   </div>
-<hr>
-<address></address>
-<!-- hhmts start -->Last modified: Fri Mar  6 18:00:17 PST 2020 <!-- hhmts end -->
-</body> </html>
+{% endblock %}
+
+{% block sidebar %}
+  <div id="sidebar" class='near-white'>
+    <h2>Projects</h2>
+      <ul id="projects">
+      </ul>
+  </div>
+  <button id="options-collapse"></button>
+{% endblock %}
+
+{% block data %}
+  <div id="datapage" class='near-white'>
+    <div id="prdata">
+      <table id="datatable">
+      </table>
+    </div>
+  </div>
+{% endblock %}
