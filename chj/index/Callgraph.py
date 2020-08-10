@@ -68,7 +68,10 @@ class Callgraph():
                         register_node(dotgraph, tgtcmsix, nodes)
                         if tgtcmsix not in done_nodes: rem_nodes.append(tgtcmsix)
                     else:
-                        tgtname = self.jd.get_cn(cnix).get_name() + '.' + self.jd.mssignatures[msix][0]
+                        if msix in self.jd.mssignatures:
+                            tgtname = self.jd.get_cn(cnix).get_name() + '.' + self.jd.mssignatures[msix][0]
+                        else:
+                            tgtname = self.jd.get_cn(cnix).get_name()
                         dotgraph.add_edge(methodname, tgtname)
         return (nodes, dotgraph)
 
