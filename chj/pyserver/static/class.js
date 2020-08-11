@@ -1,7 +1,6 @@
 "use strict";
 
 import { GuiState } from './guistate.js';
-import { MethodBytecode } from './methodbytecode.js';
 import { Util } from './util.js';
 
 var navselected = 'HOME';
@@ -17,7 +16,7 @@ function add_links() {
     for (var i = 0; i < l; i++) {
        var methodnode = methodnodes[i];
        var cmsix = methodnode.getAttribute('cmsix');
-       var linktxt = MethodBytecode.get_link(cmsix);
+       var linktxt = Util.get_method_link(cmsix);
        var txt = methodnode.textContent;
 
        Util.replace_node_text_with_link(txt, methodnode, linktxt);

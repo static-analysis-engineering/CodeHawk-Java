@@ -2,7 +2,6 @@
 
 import { Util } from './util.js';
 import { GuiState } from './guistate.js';
-import { Bytecode } from './bytecode.js';
 
 var Classes = {
     addproject : function(response, navengagement, navproject) {

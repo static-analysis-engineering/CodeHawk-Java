@@ -1,7 +1,6 @@
 //Costs
 
 import { Util } from './util.js';
-import { MethodBytecode } from './methodbytecode.js';
 
 var Costs = {
     addcosts : function(response) {
@@ -38,7 +37,7 @@ var Costs = {
                 dcost.setAttribute('class', 'rightalign');
 
                 drow.appendChild(dcost);
-                Util.add_table_data_with_link(cost[0], drow, MethodBytecode.get_link(cmsix));
+                Util.add_table_data_with_link(cost[0], drow, Util.get_method_link(cmsix));
 
                 table1.appendChild(drow);
             }
@@ -64,7 +63,7 @@ var Costs = {
                 dcost.setAttribute('class', 'rightalign');
 
                 drow.appendChild(dcost);
-                Util.add_table_data_with_link(cost[0], drow, MethodBytecode.get_link(cmsix));
+                Util.add_table_data_with_link(cost[0], drow, Util.get_method_link(cmsix));
 
                 table2.appendChild(drow);
             }
@@ -97,7 +96,7 @@ var Costs = {
 
                 drow.appendChild(dlb);
                 drow.appendChild(dub);
-                Util.add_table_data_with_link(cost[0], drow, MethodBytecode.get_link(cmsix));
+                Util.add_table_data_with_link(cost[0], drow, Util.get_method_link(cmsix));
 
                 table3.appendChild(drow);
             }

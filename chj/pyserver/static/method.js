@@ -1,7 +1,5 @@
 "use strict";
 
-import { MethodBytecode } from './methodbytecode.js';
-
 var navselected = 'Bytecode';
 //var navengagement = document.getElementById('mainpage').getAttribute('eng');
 //var navproject = document.getElementById('mainpage').getAttribute('proj');

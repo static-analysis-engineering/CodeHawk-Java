@@ -1,7 +1,6 @@
 //Loops
 
 import { Util } from './util.js';
-import { MethodBytecode } from './methodbytecode.js';
 import { GuiState } from './guistate.js';
 
 var Loops = {

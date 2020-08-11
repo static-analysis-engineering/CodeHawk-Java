@@ -1,7 +1,6 @@
 //Reflective Calls
 
 import { Util } from './util.js';
-import { MethodBytecode } from './methodbytecode.js';
 
 var Reflective = {
     addreflective : function(response) {
@@ -48,7 +47,7 @@ var Reflective = {
 
                 dpc.setAttribute('class', 'rightalign');
 
-                Util.add_table_data_with_link(methodname, drow, MethodBytecode.get_link(cmsix));
+                Util.add_table_data_with_link(methodname, drow, Util.get_method_link(cmsix));
                 //drow.appendChild(dname);
                 drow.appendChild(dpc);
                 drow.appendChild(dcall)

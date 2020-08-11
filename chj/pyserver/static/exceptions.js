@@ -1,7 +1,6 @@
 //Exceptions
 
 import { Util } from './util.js';
-import { MethodBytecode } from './methodbytecode.js';
 
 var Exceptions = {
     addexceptions : function(response) {
@@ -38,7 +37,7 @@ var Exceptions = {
                 if(i == 0) {
                     var methodname = exception_handler[4] + " ( " + cmsix + " )"; 
                 
-                    var dname = Util.add_table_data_with_link(methodname, drow, MethodBytecode.get_link(cmsix));
+                    var dname = Util.add_table_data_with_link(methodname, drow, Util.get_method_link(cmsix));
                     dname.rowSpan = exceptions.length;
                     //MethodBytecode.link_to_method_bytecode(dname, cmsix);
                 }   

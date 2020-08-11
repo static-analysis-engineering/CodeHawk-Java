@@ -1,7 +1,6 @@
 //Recursive Methods
 
 import { Util } from './util.js';
-import { MethodBytecode } from './methodbytecode.js';
 
 var Recursive = {
     addrecursive : function(response) {
@@ -33,7 +32,7 @@ var Recursive = {
 
                 var cmsix = recursivecalls[i][0];
                 var methodname = Util.build_method_name(recursivecalls[i][1], cmsix);
-                Util.add_table_data_with_link(methodname, drow, MethodBytecode.get_link(cmsix));
+                Util.add_table_data_with_link(methodname, drow, Util.get_method_link(cmsix));
 
                 table1.appendChild(drow);
             }
@@ -56,8 +55,8 @@ var Recursive = {
                 var calleecmsix = mutualrecursivecalls[i][2];
                 var callername = Util.build_method_name(mutualrecursivecalls[i][1], callercmsix);
                 var calleename = Util.build_method_name(mutualrecursivecalls[i][3], calleecmsix);
-                Util.add_table_data_with_link(callername, drow, MethodBytecode.get_link(callercmsix));
-                Util.add_table_data_with_link(calleename, drow, MethodBytecode.get_link(calleecmsix));
+                Util.add_table_data_with_link(callername, drow, Util.get_method_link(callercmsix));
+                Util.add_table_data_with_link(calleename, drow, Util.get_method_link(calleecmsix));
 
                 table2.appendChild(drow);
             }
@@ -86,9 +85,9 @@ var Recursive = {
                 var calleename = Util.build_method_name(recursive2cycles[i][3], calleecmsix);
                 var subcalleename = Util.build_method_name(recursive2cycles[i][5], subcalleecmsix);
 
-                var dcaller = Util.add_table_data_with_link(callername, drow1, MethodBytecode.get_link(callercmsix));
-                var dcallee = Util.add_table_data_with_link("==> " + calleename, drow2, MethodBytecode.get_link(calleecmsix));
-                var dsubcallee = Util.add_table_data_with_link("====> " + subcalleename, drow3, MethodBytecode.get_link(subcalleecmsix));
+                var dcaller = Util.add_table_data_with_link(callername, drow1, Util.get_method_link(callercmsix));
+                var dcallee = Util.add_table_data_with_link("==> " + calleename, drow2, Util.get_method_link(calleecmsix));
+                var dsubcallee = Util.add_table_data_with_link("====> " + subcalleename, drow3, Util.get_method_link(subcalleecmsix));
 
                 dcaller.style.border = '1px black';
                 dcallee.style.border = '1px black';

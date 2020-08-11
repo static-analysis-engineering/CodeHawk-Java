@@ -94,6 +94,10 @@ var Util = {
         row.appendChild(node);
     },
 
+    get_method_link : function(cmsix) {
+        return "/method/" + GuiState.engagement + "/" + GuiState.project + "/" + cmsix;
+    },
+
     sortTable : function(tableid, columnindex, sortf0, sortf, reverse) {
         var rev = 1;
         if (reverse) { rev = -1; }
