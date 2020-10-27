@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}
+  <title>{{ title }}</title>
+{% endblock %}
+
+{% block imports %}
+  <link rel="stylesheet" href="{{url_for('static',filename='taint.css') }}">
+  <script src="{{ url_for('static',filename='taint.js') }}" type="module"></script>
+{% endblock %}
+
+{% block navbar %}
+  <nav class='near-white'>
+    <div class='flex justify-right'>
+      <div class='flex pr-10 pb-5'>
+        <input id="gsearch" placeholder="Search Graph" type="search" name="gsearch">
+        <input id="gbsearch" type="button" value="Submit">
+      </div>
+    </div>
+  </nav>
+{% endblock %}
+
+{% block sidebar %}
+  <div id="sidebar">
+    <ul id="options">
+      <li>
+        <div id="taintsearch">
+          <input id="tsink" type="search" name="tsink" placeholder="Taint Destination" title="Taint Destination">
+          <input id="btsink" type="button" value="Go">
+        </div>
+      </li> 
+      <li>
+        <input id="loopsbox" type="checkbox" name="loops">
+        <label for="loops">Loops</label>
+      </li>
+      <li><hr></li>
+      <li>
+        <div class="smallsquare yellow"></div>
+        <span>Conditional</span>
+      </li>
+      <li>
+        <div class="smallsquare red"></div>
+        <span>Loop Counter</span>
+      </li>
+      <li>
+        <span>Return</span>
+        <div class="smallsquare green"></div>
+      </li>
+    </ul>
+  </div>
+  <button id="options-collapse"></button>
+{% endblock %}
+
+{% block container %}
+  <!-- Container's class is sometimes reset, be careful when adding classes here -->
+  <div id="container" class="dataview">
+    {{ super() }}
+    <div id="overlay" class="hidden">
+      <div id="overlayinfo">Creating Taint Graph.<br/>This may take up to 10 seconds.</div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block data %}
+  <h3 id="title">{{ name }}</h3>
+  <div id="datapage" class='near-white graphview'>
+    <button id="zoomin">+</button>
+    <button id="zoomout">-</button>
+    <div id="data">
+      {{ body }}
+    </div>
+  </div>
+{% endblock %}

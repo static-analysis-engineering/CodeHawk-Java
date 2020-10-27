@@ -36,15 +36,17 @@ def sanitize(s):
 
 class DotNode(object):
 
-    def __init__(self,name,labeltxt=None,color=None,shaded=False):
+    def __init__(self,name,labeltxt=None,color=None,fillcolor=None,shaded=False):
         self.name = name
         self.labeltxt = labeltxt
         self.shaded = shaded
         self.color = color
+        self.fillcolor = fillcolor
         self.addquotes = True
 
     def set_label(self,s): self.label = sanitize(s)
     def set_color(self,c): self.color = c
+    def set_fillcolor(self,c): self.fillcolor = c
     def set_shaded(self): self.shaded = True
 
     def __str__(self):
@@ -53,10 +55,13 @@ class DotNode(object):
             labeltxt = ''
         else:
             labeltxt = 'label="' + self.labeltxt + '"'
+
         if self.shaded:
             shadetxt = 'style=filled,color=".7 .3 1.0"'
         elif not self.color is None:
             shadetxt = 'style=filled,color="' + self.color + '"'
+        elif not self.fillcolor is None:
+            shadetxt = 'style=filled,fillcolor="' + self.fillcolor + '"'
         else:
             shadetxt = ''
 
@@ -94,10 +99,10 @@ class DotGraph(object):
         self.rankdir = 'TB'
         self.bgcolor = 'gray96'
 
-    def add_node(self,name,labeltxt=None,shaded=False,color=None):
+    def add_node(self,name,labeltxt=None,shaded=False,color=None,fillcolor=None):
         if not name in self.nodes:
             if not labeltxt is None: labeltxt = sanitize(labeltxt)
-            self.nodes[name] = DotNode(name,labeltxt=labeltxt,shaded=shaded,color=color)
+            self.nodes[name] = DotNode(name,labeltxt=labeltxt,shaded=shaded,color=color,fillcolor=fillcolor)
 
     def add_edge(self,src,tgt,labeltxt=None):
         self.add_node(src)

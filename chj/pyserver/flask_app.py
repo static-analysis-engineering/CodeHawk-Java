@@ -39,6 +39,9 @@ import chj.util.xmlutil as UX
 import chj.index.AppAccess as AP
 import chj.util.dotutil as UD
 import chj.util.svgutil as UG
+import chj.util.analysisutil as UA
+
+from chj.index.TaintGraph import TaintGraph
 
 from chj.reporting.BytecodeReport import BytecodeReport
 from chj.reporting.BranchConditions import BranchConditions
@@ -291,6 +294,45 @@ def loadtaintorigins(engagement, project):
         result['meta']['status'] = 'ok'       
         result['content'] = taintsummary
     return jsonify(result)
+
+@app.route('/taint/<engagement>/<project>/<index>', methods=['GET', 'POST'])
+def loadtaintgraph(engagement, project, index):
+    result = {}
+    result['meta'] = {}
+    loops = False
+    sink = None
+    try:
+        title = engagement + ":" + project + ":" + index
+        app = load_engagement_app(engagement, project)
+        name = str(app.jd.ttd.get_taint_origin(int(index)))
+        UA.analyze_taint_propagation(project, index)
+
+        if request.method == 'POST':
+            req = request.form
+            loops = True if 'loops' in req else False
+            sink = req['sinkid'] if 'sinkid' in req else None
+
+        taintgraph = TaintGraph(app, project, index, loops=loops, sink=sink)
+        dotgraph = taintgraph.as_dot(index)
+        svggraph = UG.get_svg(app.path, dotgraph)
+        svg = ET.tostring(svggraph.getroot(), encoding='unicode', method='html')
+
+        if request.method == 'GET':
+            template = render_template('taint.html', title=title, body=Markup(svg), name=name,
+                                        eng=engagement, proj=project, index=index)
+    except Exception as e:
+        result['meta']['status'] = 'fail'
+        result['meta']['reason'] = print(e)
+        traceback.print_exc()
+        return result
+    else:
+        if request.method == 'GET':
+            return template
+        if request.method == 'POST':
+            result['meta']['status'] = 'ok'
+            result['content'] = {}
+            result['content']['svg'] = Markup(svg)
+            return result
 
 def load_engagement_app(engagement, project):
     (path, jars) = UF.get_engagement_app_data(project)

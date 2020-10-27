@@ -221,7 +221,8 @@ class AnalysisManager():
         self.add_jars(cmd)
         print('Executing: ' + ' '.join(cmd))
         try:
-            result = subprocess.call(cmd,cwd=self.apppath,stderr=subprocess.STDOUT)
+            stdout = subprocess.DEVNULL if silent else subprocess.STDOUT
+            result = subprocess.call(cmd,cwd=self.apppath,stdout=stdout,stderr=subprocess.STDOUT)
         except OSError as e:
             raise UF.CHJOSErrorInAnalyzer(cmd,e)
         except subprocess.CalledProcessError as e:

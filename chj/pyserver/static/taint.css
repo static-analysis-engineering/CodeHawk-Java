@@ -1,0 +1,222 @@
+* {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+header {
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    border-top: 1px solid black;
+    color: Black;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 10px 10px 0px 10px;
+    padding: 15px;
+}
+
+hr {
+    border: 1px solid black;
+    margin: 20px 0;
+}
+
+svg {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* =====================================================================
+ * main page
+ * ---------------------------------------------------------------------
+ */
+
+#container {
+    display: grid;
+    grid-template-rows: 31px minmax(60vh, auto);
+    margin: 5px 10px 10px 10px;
+}
+
+
+#datapage {
+    border: 1px solid black;
+    color: #675c47;
+    font-size: 80%;
+    grid-column: 3 / 4;
+    grid-row: 2 / 3;
+    position: relative;
+}
+
+#sidebar {
+    background-color: #f4f4f4;
+    border: 1px solid black;
+    color: Black;
+    font-size: 100%;
+    grid-column: 1 / 2;
+    grid-row: 1 / 3;
+    min-height: 100%;
+    overflow: scroll;
+    padding: 5px 10px 5px 10px;
+    position: relative;
+}
+
+#taintsearch {
+    position: relative;
+}
+
+#tsink {
+    padding-right: 2.5rem;
+    width: 100%; 
+}
+
+#btsink {
+    width: 2.5rem;
+    position: absolute;
+    right: 1px;
+    top: 1px;
+    bottom: 1px;
+    padding: 0;
+    background-color: transparent;
+}
+
+#gsearch {
+    padding-right: 5rem;
+    width: 17rem;
+}
+
+#gbsearch {
+    width: 5rem;
+    position: absolute;
+    right: 10px;
+    bottom: 6px;
+    top: 1px;
+    background-color: transparent;
+}
+
+#options-collapse {
+    grid-column: 2 / 3;
+    grid-row: 1 / 3;
+}
+
+#projects {
+    list-style-type: none;
+    margin: 10px;
+    padding: 0;
+    cursor: pointer;
+}
+
+#options {
+    list-style-type: none;
+    margin: 0px;
+    padding: 0;
+}
+
+#title {
+    background-color: #f4f4f4;
+    border-top: 1px solid black;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    color: Black;
+    font-family: avenir next, avenir, sans-serif;
+    font-size: 20px;
+    grid-column: 3 / 4;
+    grid-row: 1 / 2;
+    margin: 0px 0px 0px 0px;
+    text-align: center;
+}
+
+#data {
+    grid-column: 3 / 4;
+    grid-row: 2 / 3;
+}
+
+#zoomin {
+    right: 48px;
+    top: 8px;
+    position: absolute;
+    z-index: 1;
+    width: 38px;
+}
+
+#zoomout {
+    right: 8px;
+    top: 8px;
+    position: absolute;
+    z-index: 1;
+    width: 38px;
+}
+
+#overlay {
+  background-color: rgba(0,0,0,0.5); /* Black background with opacity */
+  cursor: pointer; /* Add a pointer on hover */
+}
+
+#overlayinfo {
+  position: absolute;
+  top: 200px;
+  left: 50%;
+  font-size: 40px;
+  color: white;
+  transform: translate(-50%,-50%);
+  -ms-transform: translate(-50%,-50%);
+}
+
+/* =====================================================================
+ * Class Styles
+ * ---------------------------------------------------------------------
+ */
+
+.dataview {
+    grid-template-columns: 18% 2% 80%;
+}
+
+.graphview {
+    overflow: hidden;
+    padding-bottom: 8rem;
+    padding-top: 2rem;
+}
+
+.fullview {
+    grid-template-columns: 0% 2% 98%;
+}
+
+.simpleview {
+    grid-template-columns: 0% 0% 100%;
+}
+
+.hidden {
+    display: none;
+}
+
+.smallsquare {
+    border: 1px solid black;
+    display: inline-block;
+    height: 1rem;
+    width: 1rem;
+    position: absolute;
+    right: 5px;
+}
+
+.red {
+    background : red;
+}
+
+.green {
+    background : green;
+}
+
+.yellow {
+    background : yellow;
+}
+
+.cgridarea {
+    display: grid;
+    grid-column: 1 / 4;
+    grid-row: 1 / 3;
+    position: relative;
+    z-index: 3;
+}
+
+.relative {
+    position: relative;
+}
