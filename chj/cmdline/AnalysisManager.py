@@ -28,6 +28,7 @@
 import os
 import shutil
 import subprocess
+import sys
 
 import chj.util.fileutil as UF
 
@@ -219,9 +220,9 @@ class AnalysisManager():
         if self.verbose: cmd.append('-verbose')
         if self.dbg: cmd.append('-dbg')
         self.add_jars(cmd)
-        print('Executing: ' + ' '.join(cmd))
+        if not silent: print('Executing: ' + ' '.join(cmd))
         try:
-            stdout = subprocess.DEVNULL if silent else subprocess.STDOUT
+            stdout = subprocess.DEVNULL if silent else sys.stdout
             result = subprocess.call(cmd,cwd=self.apppath,stdout=stdout,stderr=subprocess.STDOUT)
         except OSError as e:
             raise UF.CHJOSErrorInAnalyzer(cmd,e)

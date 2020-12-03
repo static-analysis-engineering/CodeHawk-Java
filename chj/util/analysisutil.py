@@ -30,6 +30,7 @@ import subprocess
 
 import chj.util.fileutil as UF
 import chj.cmdline.AnalysisManager as AM
+import chj.index.AppAccess as AP
 
 def analyze_taint_propagation(appname, origin):
     try:
@@ -47,5 +48,14 @@ def analyze_taint_propagation(appname, origin):
 
     try:
         am.create_taint_trail(origin,silent=True)
+        app = reload_engagement_app(appname)
+        return app
     except UF.CHJError as e:
         print(str(e.wrap()))
+
+#Useful when the analysis has changed the xml results
+def reload_engagement_app(project):
+    (path, jars) = UF.get_engagement_app_data(project)
+    UF.check_analysisdir(path)
+    app = AP.AppAccess(path)
+    return app

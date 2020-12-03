@@ -305,7 +305,7 @@ def loadtaintgraph(engagement, project, index):
         title = engagement + ":" + project + ":" + index
         app = load_engagement_app(engagement, project)
         name = str(app.jd.ttd.get_taint_origin(int(index)))
-        UA.analyze_taint_propagation(project, index)
+        app = UA.analyze_taint_propagation(project, index)
 
         if request.method == 'POST':
             req = request.form
