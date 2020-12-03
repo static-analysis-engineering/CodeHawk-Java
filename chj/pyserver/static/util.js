@@ -94,8 +94,29 @@ var Util = {
         row.appendChild(node);
     },
 
+    get_child_with_tag(node, tag){
+        if (node.hasChildNodes()) {
+            var children = node.children;
+            for (var i = 0; i < children.length; i++) {
+                if (children[i].tagName !== undefined ) {
+                    if (children[i].tagName.toLowerCase() == tag.toLowerCase()) {
+                        return children[i];
+                    }
+                }
+            }
+        }
+    },
+
+    get_class_link : function(cnix) {
+        return "/class/" + GuiState.engagement + "/" + GuiState.project + "/" + cnix;
+    },
+
     get_method_link : function(cmsix) {
         return "/method/" + GuiState.engagement + "/" + GuiState.project + "/" + cmsix;
+    },
+
+    get_taint_link : function(taintorigin) {
+        return "/taint/" + GuiState.engagement + "/" + GuiState.project + "/" + taintorigin;
     },
 
     sortTable : function(tableid, columnindex, sortf0, sortf, reverse) {

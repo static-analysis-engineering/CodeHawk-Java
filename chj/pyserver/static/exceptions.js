@@ -39,7 +39,7 @@ var Exceptions = {
                 
                     var dname = Util.add_table_data_with_link(methodname, drow, Util.get_method_link(cmsix));
                     dname.rowSpan = exceptions.length;
-                    //MethodBytecode.link_to_method_bytecode(dname, cmsix);
+                    dname.setAttribute('class', 'breakable');
                 }   
             
                 var dstartpc = document.createElement('td');
@@ -55,7 +55,8 @@ var Exceptions = {
                 dstartpc.setAttribute('class', 'rightalign');
                 dendpc.setAttribute('class', 'rightalign');
                 dhandlerpc.setAttribute('class', 'rightalign');
-            
+                dsource.setAttribute('class', 'breakable');
+
                 drow.appendChild(dstartpc);
                 drow.appendChild(dendpc);
                 drow.appendChild(dhandlerpc);

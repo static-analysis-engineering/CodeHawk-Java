@@ -202,7 +202,7 @@ class CHJOSErrorInAnalyzer(CHJError):
         self.error = e
 
     def __str__(self):
-        return ('OS Error in command\n' + self.cmd + '\n' + str(self.error) + '\n'
+        return ('OS Error in command\n' + str(self.cmd) + '\n' + str(self.error) + '\n'
                     + 'Please check your platform settings in Config.py')
 
 class CHJProcessError(CHJError):

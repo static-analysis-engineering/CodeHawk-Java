@@ -32,10 +32,10 @@ var TaintOrigins = {
             var dtaint = document.createElement('td');
 
             dtaintorigin.textContent = taintorigin;
-            dtaint.textContent = taints[taintorigin];
 
             drow.appendChild(dtaintorigin);
-            drow.appendChild(dtaint);
+            var taintlink = Util.get_taint_link(taintorigin);
+            Util.add_table_data_with_link(taints[taintorigin], drow, taintlink)
 
             table.appendChild(drow);
 

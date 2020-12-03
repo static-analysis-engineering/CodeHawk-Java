@@ -1,9 +1,8 @@
 "use strict";
 
+import { GraphUtil } from './graphutil.js';
+
 var navselected = 'Bytecode';
-//var navengagement = document.getElementById('mainpage').getAttribute('eng');
-//var navproject = document.getElementById('mainpage').getAttribute('proj');
-//var cmsix = document.getElementById('mainpage').getAttribute('cmsix');
 
 var navengagement = null;
 var navproject = null;
@@ -19,7 +18,7 @@ function loadcfg(navengagement, navproject, cmsix) {
     if (request.status == 200) {
         var response = JSON.parse(request.responseText);
         if (response['meta']['status'] == 'ok') {
-            addsvg(response['content'])
+            GraphUtil.addsvg(response['content'])
         } else {
             alert('Error');
         }
@@ -38,7 +37,7 @@ function loadcfgcost(navengagement, navproject, cmsix) {
     if (request.status == 200) {
         var response = JSON.parse(request.responseText);
         if (response['meta']['status'] == 'ok') {
-            addsvg(response['content']);
+            GraphUtil.addsvg(response['content']);
         } else {
             alert('Error');
         }
@@ -57,7 +56,7 @@ function loadsimplecfgcost(navengagement, navproject, cmsix) {
     if (request.status == 200) {
         var response = JSON.parse(request.responseText);
         if (response['meta']['status'] == 'ok') {
-            addsvg(response['content']);
+            GraphUtil.addsvg(response['content']);
         } else {
             alert('Error');
         }
@@ -76,7 +75,7 @@ function loadcg(navengagement, navproject, cmsix) {
     if (request.status == 200) {
         var response = JSON.parse(request.responseText);
         if (response['meta']['status'] == 'ok') {
-            addsvg(response['content']);
+            GraphUtil.addsvg(response['content']);
             add_links();
         } else {
             alert('Error');
@@ -96,7 +95,7 @@ function loadrevcg(navengagement, navproject, cmsix) {
     if (request.status == 200) {
         var response = JSON.parse(request.responseText);
         if (response['meta']['status'] == 'ok') {
-            addsvg(response['content']);
+            GraphUtil.addsvg(response['content']);
         } else {
             alert('Error');
         }
@@ -162,41 +161,6 @@ function select_nav(navitem) {
     }
 }
 
-function addsvg(response) {
-    var datapage = document.getElementById('datapage');
-    var prdata = document.getElementById('data');
-
-    datapage.classList.add('graphview');
-
-    var new_svg_data = get_svg_data(response['svg']);
-
-    datapage.replaceChild(new_svg_data, prdata);
-
-    //If graph is wider than can be displayed, automatically shrink the graph;
-    var datawidth = datapage.offsetWidth;
-    var svgwidth = new_svg_data.scrollWidth;
-    if (svgwidth > datawidth) {
-        var scale = datawidth / svgwidth;
-        if (scale < 0.4) {scale = 0.4;}
-        var transform = build_scale_string(scale);
-        data.style.transform = transform;
-        data.style.transformOrigin = '0% 0% 0px';
-    }
-
-    datapage.addEventListener('mousedown', function() {drag_element(event)});
-}
-
-function get_svg_data(response) {
-    var svg = response;
-
-    var new_svg_data = document.createElement('div');
-    new_svg_data.setAttribute('id', 'data');
-
-    new_svg_data.innerHTML = response;
-
-    return new_svg_data;
-}
-
 function add_nav_listener(tag) {
     document.getElementById(tag).addEventListener('click', function() {select_nav(tag)})
 }
@@ -240,22 +204,6 @@ function color_nodes() {
     }
 }
 
-function search_nodes() {
-    reset_fill();
-
-    var searchvalue = document.getElementById('gsearch').value;
-    if (searchvalue.length == 0) {return;}
-
-    var nodes = document.getElementsByClassName('node');
-    for (var i = 0; i < nodes.length; i++) {
-        var textnode = nodes[i].getElementsByTagName('text')[0];
-        if (textnode.textContent.includes(searchvalue)) {
-            var polygon = nodes[i].getElementsByTagName('polygon')[0];
-            polygon.setAttribute('fill', '#FF0000');
-        }
-    }
-}
-
 function add_links() {
     var nodes = document.getElementsByClassName('node');
     for (var i = 0; i < nodes.length; i++) {
@@ -286,142 +234,19 @@ function collapse() {
     document.getElementById('container').classList.toggle('fullview');
 }
 
-function build_scale_string(scale) {
-    var data = document.getElementById('data');
-    if (data.hasAttribute('trX') && data.hasAttribute('trY')) {
-        var trX = data.getAttribute('trX');
-        var trY = data.getAttribute('trY');
-        return build_transform_string(trX, trY, scale);
-    } else {
-        data.setAttribute('scale', scale);
-        var transform = 'scale(' + scale + ',' + scale + ')';
-        return transform;
-    }
-}
-
-function build_translate_string(trX, trY) {
-    var data = document.getElementById('data');
-    if (data.hasAttribute('scale')) {
-        var scale = data.getAttribute('scale');
-        return build_transform_string(trX, trY, scale);
-    } else {
-        data.setAttribute('trX', trX);
-        data.setAttribute('trY', trY);
-        var transform = 'translate(' + trX + 'px,' + trY + 'px)';
-        return transform
-    }
-}
-
-function build_transform_string(trX, trY, scale) {
-    var data = document.getElementById('data');
-    data.setAttribute('scale', scale);
-    data.setAttribute('trX', trX);
-    data.setAttribute('trY', trY);
-    var transform = 'translate(' + trX + 'px,' + trY + 'px) scale(' + scale + ',' + scale + ')';
-    return transform;
-}
-
-function drag_element(event) {
-    document.onmousemove = move_element;
-    document.onmouseup = stop_move;
-
-    mouseX = event.clientX;
-    mouseY = event.clientY;
-}
-
-function move_element(event) {
-    var trX = event.clientX - mouseX;
-    var trY = event.clientY - mouseY;
-
-    mouseX = event.clientX;
-    mouseY = event.clientY;
-
-    var data = document.getElementById('data');
-    if (data.hasAttribute('trX') && data.hasAttribute('trY')) {
-        var curX = parseInt(data.getAttribute('trX'), 10);
-        var curY = parseInt(data.getAttribute('trY'), 10);
-        trX = trX + curX;
-        trY = trY + curY;
-    }
-
-    var transform = build_translate_string(trX.toString(), trY.toString());
-    data.style.transform = transform;
-}
-
-//When mouse is released, page elements should no longer move
-function stop_move(event) {
-    document.onmousemove = null;
-    document.onmouseup = null;
-}
-
-function zoom_out_graph() {
-    var data = document.getElementById('data');
-    var zoomstr = '0.9';
-    if (data.hasAttribute('scale')) {
-        var zoom = parseFloat(data.getAttribute('scale'), 10);
-        if (zoom > 0.1) {
-            zoom = zoom - 0.1;
-        }
-        var zoomstr = zoom.toString();
-    }
-    data.setAttribute('scale', zoomstr);
-
-    var new_scale = build_scale_string(zoomstr);
-    data.style.transform = new_scale;
-    data.style.webkitTransform = new_scale;
-    data.style.MozTransform = new_scale;
-}
-
-function zoom_in_graph() {
-    var data = document.getElementById('data');
-    var zoomstr = '1.1';
-    if (data.hasAttribute('scale')) {
-        var zoom = parseFloat(data.getAttribute('scale'), 10);
-        if (zoom < 2.0) {
-            zoom = zoom + 0.1;
-        }
-        var zoomstr = zoom.toString();
-    }
-    data.setAttribute('scale', zoomstr);
-
-    var new_scale = build_scale_string(zoomstr);
-    data.style.transform = new_scale;
-    data.style.webkitTransform = new_scale;
-    data.style.MozTransform = new_scale;
-
-}
-
-function zoom_on_scroll(event) {
-    var data = document.getElementById('data');
-    var zoomstr = '1.0';
-    if (data.hasAttribute('scale')) {
-        var delta = event.deltaY;
-        var zoom = parseFloat(data.getAttribute('scale'), 10) + (delta / 100);
-        if (zoom < 0.1) { zoom = 1.0; }
-        if (zoom > 2.0) { zoom = 2.0; }
-        var zoomstr = zoom.toString();
-        data.setAttribute('scale', zoomstr);
-    } else {
-        data.setAttribute('scale', zoomstr);
-    }
-    data.style.transform = 'scale(' + zoomstr + ',' + zoomstr + ')';
-    //data.style.transformOrigin = '0% 0%';
-}
-
 function initialize() {
     hide_graph_aux();
 
     var datapage = document.getElementById('datapage');
-    //datapage.addEventListener('wheel', function() {zoom_on_scroll(event)});
 
     var zoomin = document.getElementById('zoomin');
-    zoomin.addEventListener('click', function() {zoom_in_graph()});
+    zoomin.addEventListener('click', function() {GraphUtil.zoom_in_graph()});
 
     var zoomout = document.getElementById('zoomout');
-    zoomout.addEventListener('click', function() {zoom_out_graph()});
+    zoomout.addEventListener('click', function() {GraphUtil.zoom_out_graph()});
 
     var gbsearch = document.getElementById('gbsearch');
-    gbsearch.addEventListener('click', function() {search_nodes()});
+    gbsearch.addEventListener('click', function() {GraphUtil.add_highlights()});
 
     var loopbox = document.getElementById('loopsbox');
     loopbox.addEventListener('change', function() {color_nodes()});
