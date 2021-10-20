@@ -27,20 +27,33 @@
 
 from chj.index.JType import JavaTypesBase
 
+from typing import List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.JTypeDictionary import JTypeDictionary
+
 class MethodSignature(JavaTypesBase):
 
-    def __init__(self,tpd,index,tags,args):
+    def __init__(self, 
+            tpd: "JTypeDictionary",
+            index: int,
+            tags: List[str],
+            args: List[int]):
         JavaTypesBase.__init__(self,tpd,index,tags,args)
         self.name = str(self.tpd.get_string(int(self.args[0])))
         self.descriptor = self.tpd.get_method_descriptor(int(self.args[1]))
         self.isstatic = int(self.args[2]) == 1
 
-    def __str__(self): return self.name + ':' + str(self.descriptor)
+    def __str__(self) -> str: return self.name + ':' + str(self.descriptor)
 
 
 class ClassMethodSignature(JavaTypesBase):
 
-    def __init__(self,tpd,index,tags,args):
+    def __init__(self,
+            tpd: "JTypeDictionary",
+            index: int,
+            tags: List[str],
+            args: List[int]):
         JavaTypesBase.__init__(self,tpd,index,tags,args)
         self.cnix = int(self.args[0])
         self.msix = int(self.args[1])
@@ -48,13 +61,13 @@ class ClassMethodSignature(JavaTypesBase):
         self.signature = self.tpd.get_method_signature_data(self.msix)
         self.methodname = self.signature.name
 
-    def get_aqname(self):
+    def get_aqname(self) -> str:
         '''return fully qualified method name with abbreviated package name.'''
         return (self.classname.get_aqname() + '.' + str(self.methodname))
 
-    def get_qname(self): return self.__str__()
+    def get_qname(self) -> str: return self.__str__()
 
-    def get_signature(self): return str(self.signature)
+    def get_signature(self) -> str: return str(self.signature)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.classname) + '.' + str(self.signature)

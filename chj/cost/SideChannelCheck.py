@@ -27,30 +27,54 @@
 
 from chj.cost.CostMeasure import CostMeasure
 
+import chj.util.fileutil as UF
+
+from typing import Dict, List, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.app.JavaMethod import JavaMethod
+    from chj.cost.MethodCost import MethodCost
+    import xml.etree.ElementTree as ET
+    from collections.abc import ValuesView
+
 class SideChannelCheck:
 
-    def __init__(self,jmc,xnode):
-        self.mc = mc                        # MethodCost               
-        self.costmodel = self.mc.costmodel
+    def __init__(self, mc: "MethodCost", xnode: "ET.Element"):
+        self.jmc = mc                                       # MethodCost
+        self.costmodel = self.jmc.costmodel
         self.xnode = xnode
-        self.paths = {}             # pred-pc -> CostMeasure
-        self.decisionpc = int(self.xnode.get('decision-pc'))
-        self.observationpc = int(self.xnode.get('observation-pc')) 
+        self.paths: Dict[int, CostMeasure] = {}             # pred-pc -> CostMeasure
 
-    def get_method(self): return self.jmc.get_method()
+    @property
+    def decisionpc(self) -> int:
+        decisionpc = self.xnode.get('decision-pc')
+        if decisionpc is None:
+            raise UF.CHJError("decision-pc missing from xml")
+        else:
+            return int(decisionpc)
 
-    def get_paths(self):
-        return self.path.values()
+    @property
+    def observationpc(self) -> int:
+        observationpc = self.xnode.get('observation-pc')
+        if observationpc is None:
+            raise UF.CHJError("observation-pc missing from xml")
+        else:
+            return int(observationpc)
 
-    def get_full_paths(self):
+    def get_method(self) -> "JavaMethod": return self.jmc.get_method()
+
+    def get_paths(self) -> "ValuesView[CostMeasure]":
+        return self.paths.values()
+
+    def get_full_paths(self) -> List[List[int]]:
         cfg = self.get_method().get_cfg()
         return cfg.enumerate_paths(self.decisionpc,self.observationpc)
 
-    def get_full_paths_through_pc(self,pc):
+    def get_full_paths_through_pc(self, pc: int) -> List[List[int]]:
         fullpaths = self.get_full_paths()
         return [ x for x in fullpaths if x[-2] == pc ]
 
-    def get_longest_full_paths_through_pc(self,pc):
+    def get_longest_full_paths_through_pc(self, pc: int) -> List[List[int]]:
         fullpaths = self.get_full_paths_through_pc(pc)
         sets = set([])
         for p in fullpaths:
@@ -65,7 +89,7 @@ class SideChannelCheck:
                 maximalpaths.append(p)
         return maximalpaths
 
-    def get_conditions_in_path(self,p):
+    def get_conditions_in_path(self, p: List[int]) -> List[Tuple[str, str]]:
         result = []
         m = self.get_method()
         cfg = self.get_method().get_cfg()
@@ -82,7 +106,7 @@ class SideChannelCheck:
                     result.append((str(e),b.get_tcond()))
         return result
 
-    def __str__(self):
+    def __str__(self) -> str:
         lines = []
         cfg = self.get_method().get_cfg()
         lines.append('decision-pc   : ' + str(self.decisionpc))

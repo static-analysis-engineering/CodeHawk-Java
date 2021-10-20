@@ -25,18 +25,26 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+import xml.etree.ElementTree as ET
+
+import chj.util.IndexedTable as IT
+
+from typing import List, Tuple
 
 class JDictionaryRecord(object):
     """Base class for all objects kept in the JDictionary."""
 
-    def __init__(self,index,tags,args):
+    def __init__(self, index: int, tags: List[str], args: List[int]) -> None:
         self.index = index
         self.tags = tags
         self.args = args
 
-    def get_key(self): return (','.join(self.tags), ','.join([str(x) for x in self.args]))
+    #def __init__(self, ixval: IndexedTableValue) -> None:
+    #    IndexedTableValue.__init__(self, ixval.index, ixval.tags, ixval.args)
 
-    def write_xml(self,node):
+    def get_key(self) -> Tuple[str, str] : return (','.join(self.tags), ','.join([str(x) for x in self.args]))
+
+    def write_xml(self, node: ET.Element) -> None:
         (tagstr,argstr) = self.get_key()
         if len(tagstr) > 0: node.set('t',tagstr)
         if len(argstr) > 0: node.set('a',argstr)

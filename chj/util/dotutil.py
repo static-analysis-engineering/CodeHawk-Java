@@ -29,8 +29,9 @@ import os
 import subprocess
 
 import chj.util.fileutil as UF
+from chj.util.DotGraph import DotGraph
 
-def print_dot(path,g):
+def print_dot(path: str, g: DotGraph) -> None:
     dotfilename = os.path.join(path,g.name + '.dot')
     pdffilename = os.path.join(path,g.name + '.pdf')
     with open(dotfilename,'w') as fp:
@@ -40,10 +41,10 @@ def print_dot(path,g):
     try:
         subprocess.call(convertcmd,stderr=subprocess.STDOUT)
         subprocess.call(opencmd,stderr=subprocess.STDOUT)
-    except Error as e:
+    except:
         raise UF.CHJError('Error in converting dot file to pdf')
 
-def save_dot(path, g):
+def save_dot(path: str, g: DotGraph) -> None:
     dotfilename = os.path.join(path, g.name + '.dot')
     with open(dotfilename, 'w') as fp:
         fp.write(str(g))

@@ -25,26 +25,35 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import Dict, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.app.JavaMethod import JavaMethod
+    from chj.index.JTerm import JTRelationalExpr
+    import xml.etree.ElementTree as ET
+
+import chj.util.fileutil as UF
+
 class MethodInvs(object):
 
-    def __init__(self,jmethod,xnode):
+    def __init__(self, jmethod: "JavaMethod", xnode: "ET.Element"):
         self.jmethod = jmethod            # JavaMethod
         self.jtd = jmethod.jd.jtd         # JTermDictionary
         self.xnode = xnode
-        self.invariants = {}   # pc -> RelationalExpr list
+        self.invariants: Dict[int, List["JTRelationalExpr"]] = {}   # pc -> RelationalExpr list
         self._initialize()
 
-    def __str__(self):
+    def __str__(self) -> str:
         lines = []
         for pc in sorted(self.invariants):
             invs = '; '.join([ str(x) for x in self.invariants[pc] ])
             lines.append(str(pc).rjust(5) + '  ' + invs)
         return '\n'.join(lines)
             
-    def _initialize(self):
+    def _initialize(self) -> None:
         if len(self.invariants) > 0: return
         for pnode in self.xnode.findall('pc-invs'):
-            pc = int(pnode.get('pc'))
+            pc = UF.safe_get(pnode, 'pc', 'pc missing from xml for method invariants in ' + self.jmethod.get_qname(), int)
             inv = self.jtd.read_xml_relational_expr_list(pnode).get_exprs()
             self.invariants[pc] = inv
 

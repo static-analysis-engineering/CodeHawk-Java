@@ -25,14 +25,13 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-
 import json
 import os
 import traceback
 
 import xml.etree.ElementTree as ET
 
-from flask import Flask, render_template, render_template_string, jsonify, request, Markup
+from flask import Flask, render_template, render_template_string, jsonify, request, Response, Markup
 
 import chj.util.fileutil as UF
 import chj.util.xmlutil as UX
@@ -52,6 +51,8 @@ from chj.reporting.Recursion import Recursion
 from chj.reporting.StaticFields import StaticFields
 from chj.reporting.TaintOrigins import TaintOrigins
 
+from typing import Any, Dict, List, Tuple, Union, TYPE_CHECKING
+
 # ======================================================================
 # Rest API
 # ======================================================================
@@ -63,11 +64,11 @@ def index():
     return render_template('index.html')
 
 @app.route('/loadprojects')
-def loadprojects():
-    result = {}
+def loadprojects() -> Response:
+    result: Dict[str, Dict[str, Any]] = {}
     result['meta'] = {}
     try:
-        projects = {}
+        projects: Dict[str, List[str]] = {}
         appfile = UF.get_engagements_data_file()
         if not appfile is None:
             for e in sorted(appfile):
@@ -84,15 +85,15 @@ def loadprojects():
     return jsonify(result)
 
 @app.route('/branches/<engagement>/<project>')
-def loadbranches(engagement, project):
-    result = {}
+def loadbranches(engagement: str, project: str) -> Response:
+    result: Dict[str, Dict[str, Any]] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
         branchsummary = BranchConditions(app).as_dictionary()
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'
@@ -100,8 +101,8 @@ def loadbranches(engagement, project):
     return jsonify(result)
 
 @app.route('/costs/<engagement>/<project>')
-def loadcosts(engagement, project):
-    result = {}
+def loadcosts(engagement: str, project: str) -> Response:
+    result: Dict[str, Dict[str, Any]] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
@@ -109,7 +110,7 @@ def loadcosts(engagement, project):
         costsummary = costreport.as_dictionary()
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok' 
@@ -117,8 +118,8 @@ def loadcosts(engagement, project):
     return jsonify(result)
 
 @app.route('/exceptions/<engagement>/<project>')
-def loadexceptions(engagement, project):
-    result = {}
+def loadexceptions(engagement: str, project: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
@@ -126,7 +127,7 @@ def loadexceptions(engagement, project):
         exceptionsummary = exceptionreport.as_dictionary()
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(str(e))
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'       
@@ -134,15 +135,15 @@ def loadexceptions(engagement, project):
     return jsonify(result)
 
 @app.route('/loops/<engagement>/<project>')
-def loadloops(engagement, project):
-    result = {}
+def loadloops(engagement: str, project: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
         loopsummary = LoopSummary(app).as_dictionary()
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'       
@@ -150,8 +151,8 @@ def loadloops(engagement, project):
     return jsonify(result)
 
 @app.route('/project/<engagement>/<project>')
-def loadproject(engagement, project):
-    result = {}
+def loadproject(engagement: str, project: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
@@ -161,7 +162,7 @@ def loadproject(engagement, project):
         app.iter_classes(f)
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'
@@ -169,8 +170,8 @@ def loadproject(engagement, project):
     return jsonify(result)
 
 @app.route('/strings/<engagement>/<project>')
-def loadstrings(engagement, project):
-    result = {}
+def loadstrings(engagement: str, project: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
@@ -179,7 +180,7 @@ def loadstrings(engagement, project):
         for (cmsix, methodresults) in sorted(strings):
             if len(methodresults) == 0: continue
             methodname = str(app.jd.get_cms(cmsix).get_aqname())
-            methodstrings = {}
+            methodstrings: Dict[str, Any] = {}
 
             methodstrings['name'] = methodname
             methodstrings['pcs'] = {}
@@ -188,7 +189,7 @@ def loadstrings(engagement, project):
             stringsummary[cmsix] = methodstrings
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'       
@@ -196,15 +197,15 @@ def loadstrings(engagement, project):
     return jsonify(result)
     
 @app.route('/recursive/<engagement>/<project>')
-def loadrecursive(engagement, project):
-    result = {}
+def loadrecursive(engagement: str, project: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
         recursionsummary = Recursion(app).as_dictionary()
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'       
@@ -212,8 +213,8 @@ def loadrecursive(engagement, project):
     return jsonify(result)
     
 @app.route('/reflective/<engagement>/<project>')
-def loadreflective(engagement, project):
-    result = {}
+def loadreflective(engagement: str, project: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
@@ -239,7 +240,7 @@ def loadreflective(engagement, project):
         app.iter_methods(f)
 
 
-        reflectionsummary = {}
+        reflectionsummary: Dict[int, Any] = {}
         for (cmsix,mmethodcalls) in methods:
             if len(mmethodcalls) > 0:
                 name = app.jd.get_cms(cmsix).get_aqname()
@@ -256,7 +257,7 @@ def loadreflective(engagement, project):
                     reflectionsummary[cmsix]['pcs'].update(pcs)
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'       
@@ -264,15 +265,15 @@ def loadreflective(engagement, project):
     return jsonify(result)
 
 @app.route('/staticfieldinits/<engagement>/<project>')
-def loadstaticfieldinits(engagement, project):
-    result = {}
+def loadstaticfieldinits(engagement: str, project: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
         sfsummary = StaticFields(app).as_dictionary()
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'       
@@ -280,15 +281,15 @@ def loadstaticfieldinits(engagement, project):
     return jsonify(result)
 
 @app.route('/taintorigins/<engagement>/<project>')
-def loadtaintorigins(engagement, project):
-    result = {}
+def loadtaintorigins(engagement: str, project: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
         taintsummary = TaintOrigins(app).as_dictionary() 
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'       
@@ -296,8 +297,8 @@ def loadtaintorigins(engagement, project):
     return jsonify(result)
 
 @app.route('/taint/<engagement>/<project>/<index>', methods=['GET', 'POST'])
-def loadtaintgraph(engagement, project, index):
-    result = {}
+def loadtaintgraph(engagement: str, project: str, index: str) -> Union[str, Dict[str, Any]]:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     loops = False
     sink = None
@@ -305,7 +306,10 @@ def loadtaintgraph(engagement, project, index):
         title = engagement + ":" + project + ":" + index
         app = load_engagement_app(engagement, project)
         name = str(app.jd.ttd.get_taint_origin(int(index)))
-        app = UA.analyze_taint_propagation(project, index)
+
+        new_app = UA.analyze_taint_propagation(project, int(index))
+        if new_app is not None:
+            app = new_app
 
         if request.method == 'POST':
             req = request.form
@@ -322,7 +326,7 @@ def loadtaintgraph(engagement, project, index):
                                         eng=engagement, proj=project, index=index)
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
         return result
     else:
@@ -334,13 +338,13 @@ def loadtaintgraph(engagement, project, index):
             result['content']['svg'] = Markup(svg)
             return result
 
-def load_engagement_app(engagement, project):
+def load_engagement_app(engagement: str, project: str) -> AP.AppAccess:
     (path, jars) = UF.get_engagement_app_data(project)
     UF.check_analysisdir(path)
     app = AP.AppAccess(path)
     return app
 
-def get_method_body(engagement, project, cmsix):
+def get_method_body(engagement: str, project: str, cmsix: int) -> Tuple[str, str]:
     app = load_engagement_app(engagement, project)
     mname = app.get_method(int(cmsix)).get_qname()
     bytecodereport = BytecodeReport(app, int(cmsix)).as_list()
@@ -349,25 +353,25 @@ def get_method_body(engagement, project, cmsix):
     return (mname, body)
 
 @app.route('/method/<engagement>/<project>/<cmsix>')
-def load_method(engagement, project, cmsix):
-    result = {}
+def load_method(engagement: str, project: str, cmsix: str) -> Union[str, Response]:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
-        (mname, body) = get_method_body(engagement, project, cmsix)
+        (mname, body) = get_method_body(engagement, project, int(cmsix))
         title = engagement + ":" + project + ":" + cmsix
         template = render_template('method.html', title=title, body=Markup(body), name=mname,
                                         eng=engagement, proj=project, index=cmsix)
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
         return jsonify(result)
     else:
         return template
 
 @app.route('/class/<engagement>/<project>/<cnix>')
-def load_bytecode(engagement, project, cnix):
-    result = {}
+def load_bytecode(engagement: str, project: str, cnix: str) -> Union[str, Response]:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
@@ -380,15 +384,15 @@ def load_bytecode(engagement, project, cnix):
                                         eng=engagement, proj=project, index=cnix)
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
         return jsonify(result)
     else:
         return template
 
 @app.route('/methodcg/<engagement>/<project>/<cmsix>')
-def load_method_cg(engagement, project, cmsix):
-    result = {}
+def load_method_cg(engagement: str, project: str, cmsix: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
@@ -401,7 +405,7 @@ def load_method_cg(engagement, project, cmsix):
         svg = ET.tostring(svggraph.getroot(), encoding='unicode', method='html')
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'
@@ -410,8 +414,8 @@ def load_method_cg(engagement, project, cmsix):
     return jsonify(result)
 
 @app.route('/methodrevcg/<engagement>/<project>/<cmsix>')
-def load_method_rev_cg(engagement, project, cmsix):
-    result = {}
+def load_method_rev_cg(engagement: str, project: str, cmsix: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
@@ -423,7 +427,7 @@ def load_method_rev_cg(engagement, project, cmsix):
         svg = ET.tostring(svggraph.getroot(), encoding='unicode', method='html')
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'
@@ -432,8 +436,8 @@ def load_method_rev_cg(engagement, project, cmsix):
     return jsonify(result)
 
 @app.route('/methodcfg/<engagement>/<project>/<cmsix>')
-def load_method_cfg(engagement, project, cmsix):
-    result = {}
+def load_method_cfg(engagement: str, project: str, cmsix: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
@@ -448,7 +452,7 @@ def load_method_cfg(engagement, project, cmsix):
         svg = ET.tostring(svggraph.getroot(), encoding='unicode', method='html') 
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'
@@ -457,8 +461,8 @@ def load_method_cfg(engagement, project, cmsix):
     return jsonify(result) 
 
 @app.route('/methodcfgcost/<engagement>/<project>/<cmsix>')
-def load_method_cfg_cost(engagement, project, cmsix):
-    result = {}
+def load_method_cfg_cost(engagement: str, project: str, cmsix: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
@@ -474,7 +478,7 @@ def load_method_cfg_cost(engagement, project, cmsix):
         svg = ET.tostring(svggraph.getroot(), encoding='unicode', method='html')
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'
@@ -483,8 +487,8 @@ def load_method_cfg_cost(engagement, project, cmsix):
     return jsonify(result)
 
 @app.route('/methodsimplecfgcost/<engagement>/<project>/<cmsix>')
-def load_method_simple_cfg_cost(engagement, project, cmsix):
-    result = {}
+def load_method_simple_cfg_cost(engagement: str, project: str, cmsix: str) -> Response:
+    result: Dict[str, Any] = {}
     result['meta'] = {}
     try:
         app = load_engagement_app(engagement, project)
@@ -500,7 +504,7 @@ def load_method_simple_cfg_cost(engagement, project, cmsix):
         svg = ET.tostring(svggraph.getroot(), encoding='unicode', method='html')
     except Exception as e:
         result['meta']['status'] = 'fail'
-        result['meta']['reason'] = print(e)
+        result['meta']['reason'] = str(e)
         traceback.print_exc()
     else:
         result['meta']['status'] = 'ok'
@@ -516,7 +520,9 @@ def load_method_simple_cfg_cost(engagement, project, cmsix):
 #    result['meta']['status'] = 'fail'
 #    result['meta']
 
-def mk_class_code_table(f, engagement, project):
+def mk_class_code_table(f: Dict[str, Dict[str, Any]],
+                        engagement: str,
+                        project: str) -> ET.Element:
     table = ET.Element('div')
     table.set('id','codetable')
 
@@ -564,7 +570,7 @@ def mk_class_code_table(f, engagement, project):
     table.append(mt)
     return table
 
-def mk_header(labels):
+def mk_header(labels: List[str]) -> ET.Element:
     headerrow = ET.Element('tr')
     for label in labels:
         header = ET.Element('th')
@@ -574,7 +580,7 @@ def mk_header(labels):
         headerrow.append(header)
     return headerrow
 
-def mk_method_code_table(f):
+def mk_method_code_table(f: List[List[str]]) -> ET.Element:
     table = ET.Element('div')
     table.set('id', 'codetable')
     mt = ET.Element('table')

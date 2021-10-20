@@ -25,17 +25,23 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import xml.etree.ElementTree as ET
+    from chj.cost.CostModel import CostModel
+    import chj.index.JTerm as JT
 
 class CostBound():
 
-    def __init__(self,costmodel,xnode):
+    def __init__(self, costmodel: "CostModel", xnode: "ET.Element"):
         self.costmodel = costmodel       # CostModel
         self.jd = self.costmodel.jd      # DataDictionary
         self.xnode = xnode          # bounds node with bound node children
-        self.terms = []
+        self.terms: List[JT.JTermBase] = []
         self._initialize()
 
-    def is_value(self):
+    def is_value(self) -> bool:
         return (any(x.is_value() for x in self.terms))
 
     def get_value(self):
@@ -43,22 +49,22 @@ class CostBound():
             for t in self.terms:
                 if t.is_value(): return t.get_value()
 
-    def is_symbolic_bound(self):
+    def is_symbolic_bound(self) -> bool:
         return (any(x.is_symbolic_value() for x in self.terms))
 
-    def get_symbolic_bound(self):
+    def get_symbolic_bound(self) -> Optional["JT.JTermBase"]:
         if self.is_symbolic_bound():
             for t in self.terms:
                 if t.is_symbolic_value(): return t
 
-    def is_top(self):
+    def is_top(self) -> bool:
         return len(self.terms) == 0
 
-    def __str__(self):
-        if self.istop(): return 'T'
+    def __str__(self) -> str:
+        if self.is_top(): return 'T'
         return '; '.join(str(t) for t in self.terms)
 
-    def _initialize(self):
+    def _initialize(self) -> None:
         bounds = self.xnode.findall('bound')
         if bounds is None or len(bounds) == 0: return
         for b in bounds:

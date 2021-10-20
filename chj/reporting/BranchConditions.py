@@ -25,20 +25,26 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import Dict, List, Tuple, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+    from chj.app.JavaMethod import JavaMethod
+
 import chj.util.printutil as UP
 
 class BranchConditions():
 
-    def __init__(self,app):
+    def __init__(self, app: "AppAccess"):
         self.app = app
 
-    def get_table(self):
+    def get_table(self) -> Dict[str, List[Tuple[int, str]]]:
         result = []
-        def f(cmsix,m):
+        def f(cmsix: int, m: "JavaMethod") -> None:
             for c in m.get_conditions():
-                result.append((cmsix, m.get_aqname(),c[0]))
+                result.append((cmsix, m.get_aqname(), c[0]))
         self.app.iter_methods(f)
-        table = {}
+        table: Dict[str, List[Tuple[int, str]]] = {}
 
         for (cmsix, name, cond) in result:
             if cond in table:
@@ -46,7 +52,7 @@ class BranchConditions():
             else:
                 table[cond] = [ (cmsix, name) ]
 
-#        for (name,cond) in result:
+#        for (name, cond) in result:
 #            if cond in table:
 #                if isinstance(table[cond],int):
 #                    table[cond] += 1
@@ -57,20 +63,20 @@ class BranchConditions():
 
         return table
          
-    def as_dictionary(self):
+    def as_dictionary(self) -> Dict[str, List[Tuple[int, str]]]:
         table = self.get_table()
         return table
 
-    def tostring(self):
+    def tostring(self) -> str:
         result = []
-        def f(cmsix,m):
+        def f(cmsix: int, m: "JavaMethod") -> None:
             for c in m.get_conditions():
                 result.append((m.get_aqname(),c[0]))
         self.app.iter_methods(f)
-        table = {}
-        for (name,cond) in result:
+        table: Dict[str, Union[str, int]] = {}
+        for (name, cond) in result:
             if cond in table:
-                if isinstance(table[cond],int):
+                if isinstance(table[cond], int):
                     table[cond] += 1
                 else:
                     table[cond] = 2
@@ -82,7 +88,7 @@ class BranchConditions():
         else:
             slen = 50
         header = [ ('condition',len) ]
-        headerline = ''.join([UP.cjust(t[0],slen) for t in header]) + 'method name or occurrences'
+        headerline = ''.join([UP.cjust(str(t[0]),slen) for t in header]) + 'method name or occurrences'
         lines = []
         lines.append(headerline)
         lines.append('-' * 80)
@@ -90,17 +96,17 @@ class BranchConditions():
             lines.append(c.ljust(slen) + '  ' + str(n))
         return '\n'.join(lines)
 
-    def toincludestring(self,s):
+    def toincludestring(self, s: str) -> str:
         result = []
-        def f(cmsix,m):
+        def f(cmsix: int, m: "JavaMethod") -> None:
             for c in m.get_conditions():
                 result.append((m.get_aqname(),c[0]))
         self.app.iter_methods(f)
-        table = {}
+        table: Dict[str, Union[str, int]] = {}
         for (name,cond) in result:
             if s in cond:
                 if cond in table:
-                    if isinstance(table[cond],int):
+                    if isinstance(table[cond], int):
                         table[cond] += 1
                     else:
                         table[cond] = 2
@@ -109,11 +115,11 @@ class BranchConditions():
         if len(table) > 0:
             slen = max(len(s) for s in table) + 2
             header = [ ('condition',len) ]
-            headerline = ''.join([UP.cjust(t[0],slen) for t in header]) + 'method name or occurrences'
+            headerline = ''.join([UP.cjust(str(t[0]),slen) for t in header]) + 'method name or occurrences'
             lines = []
             lines.append(headerline)
             lines.append('-' * 80)
-            for (c,n) in sorted(table.items(),key = lambda x:x[0]):
+            for (c,n) in sorted(table.items(), key = lambda x:x[0]):
                 lines.append(c.ljust(slen) + str(n))
             return '\n'.join(lines)
         else:

@@ -30,12 +30,18 @@ import zipfile
 import xml.etree.ElementTree as ET
 
 from chj.util.Config import Config
+import chj.util.fileutil as UF
 
 from chj.libsum.ClassSummary import ClassSummary
 
+from typing import Callable, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+
 class JDKModels():
 
-    def __init__(self,app):
+    def __init__(self, app: "AppAccess"):
         self.app = app
         self.jdkjar = zipfile.ZipFile(Config().jdksummaries,'r')
         self.filenames = []
@@ -43,21 +49,26 @@ class JDKModels():
             if info.filename.endswith('.xml') and not (info.filename == 'jdk_jar_version.xml'):
                 self.filenames.append(info.filename)
 
-    def get_class_count(self): return len(self.filenames)
+    def get_class_count(self) -> int: 
+        return len(self.filenames)
 
-    def iter_class_summaries(self,f):
-        for cn in self.filenames: f(cn,self.get_classfile_summary(cn))
+    def iter_class_summaries(self, f:Callable[[str, ClassSummary], None]) -> None:
+        for cn in self.filenames:
+            classfile_summary = self.get_classfile_summary(cn)
+            if classfile_summary is not None:
+                f(cn,classfile_summary)
 
-    def iter_package_class_summaries(self,package,f):
+    def iter_package_class_summaries(self, package: str, f:Callable[[str, ClassSummary], None]) -> None:
         for cn in self.filenames:
             summary = self.get_class_summary(cn)
-            if summary.package == package: f(cn,summary)
+            if summary is not None and summary.package == package:
+                f(cn,summary)
 
-    def has_class_summary(self,classname):
+    def has_class_summary(self, classname: str) -> bool:
         filename = classname.replace('.','/') + '.xml'
         return filename in self.filenames
 
-    def get_class_summary(self,classname):
+    def get_class_summary(self, classname: str) -> Optional[ClassSummary]:
         if self.has_class_summary(classname):
             classfilename = classname.replace('.','/') + '.xml'
             xnode = self._get_class_summary_xnode(classfilename)
@@ -65,27 +76,30 @@ class JDKModels():
                 return ClassSummary(self,xnode)
             print('Unable to read summary for ' + classname)
         print('No summary found for ' + classname)
+        return None
 
-    def get_classfile_summary(self,classfilename):
+    def get_classfile_summary(self, classfilename: str) -> Optional[ClassSummary]:
         xnode = self._get_class_summary_xnode(classfilename)
         if not xnode is None:
             return ClassSummary(self,xnode)
         print('Unable to read summary for ' + classfilename)
+        return None
 
-    def _get_class_summary_xnode(self,classfilename):
+    def _get_class_summary_xnode(self, classfilename: str) -> Optional[ET.Element]:
+        errormsg = ' missing from xml for ' + classfilename
         try:
             zfile = self.jdkjar.read(classfilename)
-            xnode = ET.fromstring(str(zfile)).find('header')
+            xnode = UF.safe_find(ET.fromstring(str(zfile)), 'header', 'header ' + errormsg)
             if 'info' in xnode.attrib:
-                info = xnode.get('info')
-                xnode = ET.fromstring(str(zfile)).find(info)
+                info = UF.safe_get(xnode, 'info', 'info ' + errormsg, str)
+                xnode = UF.safe_find(ET.fromstring(str(zfile)), info, 'info ' + errormsg)
             else:
-                xnode = ET.fromstring(str(zfile)).find('class')
+                xnode = UF.safe_find(ET.fromstring(str(zfile)), 'class', 'class ' + errormsg)
                 if xnode is None:
-                    xnode = ET.fromstring(str(zfile)).find('interface')
+                    xnode = UF.safe_find(ET.fromstring(str(zfile)), 'interface', 'interface ' + errormsg)
             if xnode is None:
                 print('Unable to load ' + classfilename)
             return xnode
         except Exception as e:
             print('Error in reading ' + classfilename + ':' + str(e))
-        
+            return None 

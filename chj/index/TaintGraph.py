@@ -31,24 +31,37 @@ import chj.util.fileutil as UF
 import chj.util.dotutil as UD
 import chj.util.graphutil as UG
 
+import chj.index.Taint as T
+
+from typing import cast, Dict, List, Optional, Set, Sequence, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+    import xml.etree.ElementTree as ET
+
 class TaintGraph():
 
-    def __init__(self,app,appname,taintsourceid,loops=False,sink=None):
+    def __init__(self,
+            app: "AppAccess",
+            appname: str,
+            taintsourceid: str,
+            loops: bool=False,
+            sink: Optional[str]=None) -> None:
         self.app = app                   # AppAccess
         self.jd = self.app.jd            # DataDictionary
         self.loops = loops
         self.sink = sink
 
-        self.xnodes = None
-        self.xedges = None
+        self.xnodes: "ET.Element"
+        self.xedges: "ET.Element"
 
-        self.pathnodes = []
-        self.nodes = []
-        self.edges = []
+        self.pathnodes: List[int] = []
+        self.nodes: List[int] = []
+        self.edges: List[Tuple[int, int]] = []
 
         self._build_graph(appname, taintsourceid)
 
-    def _get_edges(self, appname, taintsourceid):
+    def _get_edges(self, appname: str, taintsourceid: str) -> None:
         try:
             (path,_) = UF.get_engagement_app_jars(appname)
             UF.check_analysisdir(path)
@@ -57,23 +70,24 @@ class TaintGraph():
             print(str(e.wrap()))
             return
 
-        self.xnodes = xtrail.find('node-dictionary')
-        self.xedges = xtrail.find('edges')
+        self.xnodes = UF.safe_find(xtrail, 'node-dictionary', 'node-dictionary missing from xml')
+        self.xedges = UF.safe_find(xtrail, 'edges' , 'edges missing from xml')
 
-        self.nodes = [ int(n.get('ix')) for n in self.xnodes.findall('tn') ]
+        self.nodes = [ UF.safe_get(n, 'ix', 'ix missing from xml', int) for n in self.xnodes.findall('tn') ]
 
-    def _get_root_node(self,nodes,enode):
+    def _get_root_node(self, nodes: List[int], enode: "ET.Element") -> int:
         tgts = []
-        for n in enode.findall('edge'):
-            tgts.append(int(n.get('src')))
+        for en in enode.findall('edge'):
+            tgts.append(UF.safe_get(en, 'src', 'src missing from xml for taintgraph', int))
         for n in nodes:
             if not n in tgts:
                 return n
+        raise UF.CHJError("Root missing from TaintGraph")
 
-    def _build_graph(self, appname, taintsourceid):
+    def _build_graph(self, appname: str, taintsourceid: str) -> None:
         self._get_edges(appname, taintsourceid)
 
-        pathnodes = set([])
+        pathnodes: Set[int] = set([])
 
         if (not self.sink is None) or self.loops:
             sinkids = []
@@ -89,18 +103,18 @@ class TaintGraph():
             if self.loops:
                 for n in self.nodes:
                     cms = self.jd.ttd.get_taint_node_type(n)
-                    if cms.is_var() and str(cms.get_variable()) == 'lc':
+                    if cms.is_var() and str(cast(T.VariableTaintNode,cms).get_variable()) == 'lc':
                         sinkids.append(n)
 
-            edge_adjacencylists = {}
-            for n in self.xedges.findall('edge'):
-                src = int(n.get('src'))
-                tgts = [ int(x) for x in n.get('tgts').split(',') ]
+            edge_adjacencylists: Dict[int, List[int]] = {}
+            for m in self.xedges.findall('edge'):
+                src = UF.safe_get(m, 'src', 'src missing from xml', int)
+                tgts = [ int(x) for x in UF.safe_get(m, 'tgts', 'tgts missing from xml', str).split(',') ]
                 for t in tgts:
                     edge_adjacencylists.setdefault(t,[])
                     edge_adjacencylists[t].append(src)
 
-            srcid = self._get_root_node(self.nodes,self.xedges)
+            srcid = self._get_root_node(self.nodes, self.xedges)
 
             srcname = str(self.jd.ttd.get_taint_node_type(srcid))
             for sinkid in sinkids:
@@ -115,22 +129,22 @@ class TaintGraph():
 
         # if no restrictions include all nodes
         if len(pathnodes) == 0:
-            pathnodes = self.nodes
+            pathnodes = set(self.nodes)
 
         edges = []
-        for n in self.xedges.findall('edge'):
-            src = int(n.get('src'))
+        for j in self.xedges.findall('edge'):
+            src = UF.safe_get(j, 'src', 'src missing from xml', int)
             if src in self.nodes:
-                tgts = [ int(x) for x in n.get('tgts').split(',') ]
+                tgts = [ int(x) for x in UF.safe_get(j, 'tgts', 'tgts missing from xml', str).split(',') ]
                 for tgt in tgts:
                     if tgt in self.nodes:
                         edges.append((src,tgt))
 
-        self.pathnodes = pathnodes
+        self.pathnodes = list(pathnodes)
         self.edges = edges
         return
 
-    def as_dot(self, taintsourceid):
+    def as_dot(self, taintsourceid: str) -> DotGraph:
         graphname = 'trail_' + str(taintsourceid)
         dotgraph = DotGraph(graphname)
         for n in self.nodes:
@@ -140,6 +154,7 @@ class TaintGraph():
             shaded = cms.is_call()
             cmslabel = cms.dotlabel()
             if cms.is_var():
+                cms = cast(T.VariableTaintNode, cms)
                 if str(cms.get_variable()) == 'lc':
                     color = 'red'
                 if str(cms.get_variable()) == 'return':

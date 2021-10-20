@@ -32,14 +32,16 @@ import chj.util.fileutil as UF
 import chj.cmdline.AnalysisManager as AM
 import chj.index.AppAccess as AP
 
-def analyze_taint_propagation(appname, origin):
+from typing import Optional
+
+def analyze_taint_propagation(appname: str, origin: int) -> Optional[AP.AppAccess]:
     try:
         UF.check_analyzer()
         (path,jars) = UF.get_engagement_app_jars(appname)
         UF.check_analysisdir(path)
     except UF.CHJError as e:
         print(str(e.wrap()))
-        return
+        return None
 
     pkg_excludes = UF.get_engagement_app_excludes(appname)
     dependencies = UF.get_engagement_app_dependencies(appname)
@@ -47,14 +49,15 @@ def analyze_taint_propagation(appname, origin):
     am = AM.AnalysisManager(path,jars,dependencies=dependencies,excludes=pkg_excludes)
 
     try:
-        am.create_taint_trail(origin,silent=True)
+        am.create_taint_trail(origin, silent=True)
         app = reload_engagement_app(appname)
         return app
     except UF.CHJError as e:
         print(str(e.wrap()))
+        return None
 
 #Useful when the analysis has changed the xml results
-def reload_engagement_app(project):
+def reload_engagement_app(project: str) -> AP.AppAccess:
     (path, jars) = UF.get_engagement_app_data(project)
     UF.check_analysisdir(path)
     app = AP.AppAccess(path)

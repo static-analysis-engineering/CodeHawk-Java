@@ -34,9 +34,18 @@ import chj.util.fileutil as UF
 
 from chj.util.Config import Config
 
+from typing import Any, List, IO, Optional, Union
+
 class AnalysisManager():
 
-    def __init__(self,path,jars,platform=None,excludes=[],dependencies=[],verbose=False,dbg=False):
+    def __init__(self,
+        path: str,
+        jars: List[str],
+        platform: Optional[str]=None,
+        excludes: List[str]=[],
+        dependencies: List[str]=[],
+        verbose: bool=False,
+        dbg: bool=False):
         """Initialize analyzer location and target jar locations
 
         Arguments:
@@ -60,13 +69,13 @@ class AnalysisManager():
         self.jars = jars
         self.excludes = excludes
         self.dependencies = dependencies
-        self.missinglibraries =  []
+        self.missinglibraries: List[str] =  []
 
-    def _makedir(self,name):
+    def _makedir(self, name: str) -> None:
         if os.path.isdir(name): return
         os.mkdir(name)
 
-    def get_dependency_summary_jar(self,dep):
+    def get_dependency_summary_jar(self, dep: str) -> Optional[str]:
         try:
             return UF.get_lib_summary_jarfile_name(dep,self.platform)
         except UF.CHJLibraryJarNotFoundError as e:
@@ -77,22 +86,22 @@ class AnalysisManager():
             print(str(e.wrap()))
             exit(1)
 
-    def add_dependencies(self,cmd):
+    def add_dependencies(self, cmd: List[str]) -> None:
         for d in self.dependencies:
             dfile = self.get_dependency_summary_jar(d)
             if dfile is None: continue
             cmd.extend(['-summaries',dfile])
 
-    def add_excludes(self,cmd):
+    def add_excludes(self,cmd: List[str]) -> None:
         for s in self.excludes:
             cmd.extend(['-exclude_pkg_prefix',s])
 
-    def add_jars(self,cmd):
+    def add_jars(self,cmd: List[str]) -> None:
         cmd.append('-jars')
         for jar in self.jars:
             cmd.append(jar)
 
-    def analyze(self,intervalsonly=False):
+    def analyze(self,intervalsonly: bool=False) -> None:
         os.chdir(self.apppath)
         cmd = [ self.config.analyzer, '-summaries', self.jdksummaries ]
         self.add_dependencies(cmd)
@@ -103,15 +112,15 @@ class AnalysisManager():
         try:
             result = subprocess.call(cmd, cwd=self.apppath,stderr=subprocess.STDOUT)
         except OSError as e:
-            raise UF.CHJOSErrorInAnalyzer(cmd,e)
+            raise UF.CHJOSErrorInAnalyzer(' '.join(cmd), e)
         except subprocess.CalledProcessError as e:
-            raise UF.CHJProcessErrorInAnalyzer(cmd,e)
+            raise UF.CHJProcessError(' '.join(cmd),e)
         if result == 0:
             return
         else:
-            raise UF.CHJCodeHawkAnalyzerError(cmd,result)
+            raise UF.CHJCodeHawkAnalyzerError(' '.join(cmd), result)
 
-    def translate_only(self):
+    def translate_only(self) -> None:
         os.chdir(self.apppath)
         cmd = [ self.config.analyzer, '-summaries', self.jdksummaries,
                     '-translate_only' ]
@@ -122,15 +131,15 @@ class AnalysisManager():
         try:
             result = subprocess.call(cmd, cwd=self.apppath, stderr=subprocess.STDOUT)
         except OSError as e:
-            raise UF.CHJOSErrorInAnalyzer(cmd,e)
+            raise UF.CHJOSErrorInAnalyzer(' '.join(cmd), e)
         except subprocess.CalledProcessError as e:
-            raise UF.CHJProcessErrorInAnalyzer(cmd,e)
+            raise UF.CHJProcessError(' '.join(cmd), e)
         if result == 0:
             return
         else:
-            raise UF.CHJCodeHawkAnalyzerError(cmd,result)
+            raise UF.CHJCodeHawkAnalyzerError(' '.join(cmd), result)
 
-    def rungui(self):
+    def rungui(self) -> None:
         os.chdir(self.apppath)
         cmd = [ self.config.gui, '-summaries', self.jdksummaries ]
         self.add_dependencies(cmd)
@@ -140,15 +149,15 @@ class AnalysisManager():
         try:
             result = subprocess.call(cmd, cwd = self.apppath, stderr=subprocess.STDOUT)
         except OSError as e:
-            raise UF.CHJOSErrorInAnalyzer(cmd,e)
+            raise UF.CHJOSErrorInAnalyzer(' '.join(cmd), e)
         except subprocess.CalledProcessError as e:
-            raise UF.CHJProcessErrorInAnalyzer(cmd,e)
+            raise UF.CHJProcessError(' '.join(cmd), e)
         if result == 0:
             return
         else:
-            raise UF.CHJCodeHawkAnalyzerError(cmd,result)
+            raise UF.CHJCodeHawkAnalyzerError(' '.join(cmd), result)
 
-    def scanonly(self,verbose=False):
+    def scanonly(self,verbose: bool=False) -> None:
         os.chdir(self.apppath)
         print('cd ' + self.apppath)
         cmd = [ self.config.analyzer, '-summaries', self.jdksummaries,'-scan_only']
@@ -161,15 +170,15 @@ class AnalysisManager():
         try:
             result = subprocess.call(cmd, cwd=self.apppath, stderr=subprocess.STDOUT)
         except OSError as e:
-            raise UF.CHJOSErrorInAnalyzer(cmd,e)
+            raise UF.CHJOSErrorInAnalyzer(' '.join(cmd), e)
         except subprocess.CalledProcessError as e:
-            raise UF.CHJProcessErrorInAnalyzer(cmd,e)
+            raise UF.CHJProcessError(' '.join(cmd), e)
         if result == 0:
             return
         else:
-            raise UF.CHJCodeHawkAnalyzerError(cmd,result)
+            raise UF.CHJCodeHawkAnalyzerError(' '.join(cmd), result)
 
-    def create_cost_model(self,silent=False,space=False):
+    def create_cost_model(self, silent: bool=False, space: bool=False) -> None:
         os.chdir(self.apppath)
         cmd = [ self.config.analyzer, '-summaries', self.jdksummaries,
                     '-costmodel' ]
@@ -182,15 +191,15 @@ class AnalysisManager():
         try:
             result = subprocess.call(cmd,cwd=self.apppath,stderr=subprocess.STDOUT)
         except OSError as e:
-            raise UF.CHJOSErrorInAnalyzer(cmd,e)
+            raise UF.CHJOSErrorInAnalyzer(' '.join(cmd),e)
         except subprocess.CalledProcessError as e:
-            raise UF.CHJProcessErrorInAnalyzer(cmd,e)
+            raise UF.CHJProcessError(' '.join(cmd), e)
         if result == 0:
             return
         else:
-            raise UF.CHJCodeHawkAnalyzerError(cmd,result)
+            raise UF.CHJCodeHawkAnalyzerError(' '.join(cmd), result)
 
-    def create_taint_graphs(self,silent=False,space=False):
+    def create_taint_graphs(self, silent: bool=False, space: bool=False) -> None:
         os.chdir(self.apppath)
         cmd = [ self.config.analyzer, '-summaries', self.jdksummaries,
                     '-taint' ]
@@ -203,15 +212,15 @@ class AnalysisManager():
         try:
             result = subprocess.call(cmd,cwd=self.apppath,stderr=subprocess.STDOUT)
         except OSError as e:
-            raise UF.CHJOSErrorInAnalyzer(cmd,e)
+            raise UF.CHJOSErrorInAnalyzer(' '.join(cmd),e)
         except subprocess.CalledProcessError as e:
-            raise UF.CHJProcessErrorInAnalyzer(cmd,e)
+            raise UF.CHJProcessError(' '.join(cmd), e)
         if result == 0:
             return
         else:
-            raise UF.CHJCodeHawkAnalyzerError(cmd,result)
+            raise UF.CHJCodeHawkAnalyzerError(' '.join(cmd), result)
 
-    def create_taint_trail(self,taintindex,silent=False,space=False):
+    def create_taint_trail(self, taintindex: int, silent: bool=False, space: bool=False) -> None:
         os.chdir(self.apppath)
         cmd = [ self.config.analyzer, '-summaries', self.jdksummaries,
                     '-taintorigin', str(taintindex) ]
@@ -222,13 +231,13 @@ class AnalysisManager():
         self.add_jars(cmd)
         if not silent: print('Executing: ' + ' '.join(cmd))
         try:
-            stdout = subprocess.DEVNULL if silent else sys.stdout
-            result = subprocess.call(cmd,cwd=self.apppath,stdout=stdout,stderr=subprocess.STDOUT)
+            stdout: Union[int, IO[Any]] = subprocess.DEVNULL if silent else sys.stdout
+            result = subprocess.call(cmd, cwd=self.apppath, stdout=stdout, stderr=subprocess.STDOUT)
         except OSError as e:
-            raise UF.CHJOSErrorInAnalyzer(cmd,e)
+            raise UF.CHJOSErrorInAnalyzer(' '.join(cmd), e)
         except subprocess.CalledProcessError as e:
-            raise UF.CHJProcessErrorInAnalyzer(cmd,e)
+            raise UF.CHJProcessError(' '.join(cmd), e)
         if result == 0:
             return
         else:
-            raise UF.CHJCodeHawkAnalyzerError(cmd,result)
+            raise UF.CHJCodeHawkAnalyzerError(' '.join(cmd), result)

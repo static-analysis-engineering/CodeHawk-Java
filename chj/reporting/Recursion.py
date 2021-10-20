@@ -27,17 +27,23 @@
 
 import chj.util.printutil as UP
 
+from typing import Dict, List, Set, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+    from chj.index.CallgraphDictionary import CallgraphTargetBase
+
 class Recursion():
 
-    def __init__(self,app):
+    def __init__(self, app: "AppAccess"):
         self.app = app
-        self.appedges = self.get_appedges()    # cmsix -> targets
+        self.appedges: Dict[int, Set[int]] = self.get_appedges()    # cmsix -> targets
 
-    def get_appedges(self):
+    def get_appedges(self) -> Dict[int, Set[int]]:
         jd = self.app.jd
-        appedges = {}
+        appedges: Dict[int, Set[int]] = {}
 
-        def f(caller,pc,callee,tgt):
+        def f(caller: int, pc: int, callee: int, tgt: "CallgraphTargetBase") -> None:
             if tgt.has_application_targets():
                 if not caller in appedges: appedges[caller] = set([])
                 cmstgts = [ jd.get_cmsix(cnix,callee) for cnix in tgt.get_application_targets() ]
@@ -47,7 +53,7 @@ class Recursion():
         jd.iter_callgraph_edges(f)
         return appedges
 
-    def get_self_recursive_calls(self):
+    def get_self_recursive_calls(self) -> List[int]:
         recursivecalls = []
 
         for caller in self.appedges:
@@ -56,7 +62,7 @@ class Recursion():
 
         return recursivecalls
 
-    def get_mutual_recursive_calls(self):
+    def get_mutual_recursive_calls(self) -> Set[Tuple[int, int]]:
         mutualrecursivecalls = set([])
 
         for caller in self.appedges:
@@ -69,7 +75,7 @@ class Recursion():
 
         return mutualrecursivecalls
 
-    def get_recursive_2_cycles(self):
+    def get_recursive_2_cycles(self) -> List[Tuple[int, int, int]]:
         recursive2cycles = []
 
         for caller in self.appedges:
@@ -84,20 +90,20 @@ class Recursion():
     
         return recursive2cycles
 
-    def as_dictionary(self):
-        result = {}
+    def as_dictionary(self) -> Dict[str, List[Tuple[str, ...]]]:
+        result: Dict[str, List[Tuple[str, ...]]] = {}
         jd = self.app.jd
 
-        result["recursivecalls"] = [ (call, str(jd.get_cms(call))) for call in self.get_self_recursive_calls() ]
-        result["mutualrecursivecalls"] = [ (caller, str(jd.get_cms(caller)), callee, str(jd.get_cms(callee))) 
+        result["recursivecalls"] = [ (str(call), str(jd.get_cms(call))) for call in self.get_self_recursive_calls() ]
+        result["mutualrecursivecalls"] = [ (str(caller), str(jd.get_cms(caller)), str(callee), str(jd.get_cms(callee)))
                                             for (caller, callee) in self.get_mutual_recursive_calls() ]
-        result["recursive2cycles"] = [ (caller, str(jd.get_cms(caller)), callee, 
-                                            str(jd.get_cms(callee)), subcallee, str(jd.get_cms(subcallee))) 
+        result["recursive2cycles"] = [ (str(caller), str(jd.get_cms(caller)), str(callee),
+                                            str(jd.get_cms(callee)), str(subcallee), str(jd.get_cms(subcallee)))
                                             for (caller, callee, subcallee) in self.get_recursive_2_cycles() ]
 
         return result
 
-    def to_string(self):
+    def to_string(self) -> str:
         jd = self.app.jd
 
         lines = []
@@ -109,15 +115,15 @@ class Recursion():
 
         lines.append('\nMutual recursion: ')
         for (caller,callee) in self.get_mutual_recursive_calls():
-            caller = jd.get_cms(caller)
-            callee = jd.get_cms(callee)
-            lines.append('\n' + str(caller) + '\n ==> ' + str(callee))
+            caller_cms = jd.get_cms(caller)
+            callee_cms = jd.get_cms(callee)
+            lines.append('\n' + str(caller_cms) + '\n ==> ' + str(callee_cms))
 
         lines.append('\nCycle of 2: ')
         for (caller,callee,subcallee) in self.get_recursive_2_cycles():
-            caller = jd.get_cms(caller)
-            callee = jd.get_cms(callee)
-            subcallee = jd.get_cms(subcallee)
-            lines.append('\n' + str(caller) + '\n ==> ' + str(callee) + '\n ====> ' + str(subcallee))
+            caller_cms = jd.get_cms(caller)
+            callee_cms = jd.get_cms(callee)
+            subcallee_cms = jd.get_cms(subcallee)
+            lines.append('\n' + str(caller_cms) + '\n ==> ' + str(callee_cms) + '\n ====> ' + str(subcallee_cms))
             
         return '\n'.join(lines)

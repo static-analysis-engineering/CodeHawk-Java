@@ -27,42 +27,56 @@
 
 from chj.index.JType import JavaTypesBase
 
+from typing import Any, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.Classname import Classname
+    from chj.index.JTypeDictionary import JTypeDictionary
+
 class FieldSignature(JavaTypesBase):
 
-    def __init__(self,tpd,index,tags,args):
+    def __init__(self,
+            tpd: "JTypeDictionary",
+            index: int,
+            tags: List[str],
+            args: List[int]):
         JavaTypesBase.__init__(self,tpd,index,tags,args)
 
-    def get_type(self): return self.tpd.get_value_type(int(self.args[1]))
+    def get_type(self) -> Any: return self.tpd.get_value_type(int(self.args[1]))
 
-    def get_name(self): return str(self.tpd.get_string(self.args[0]))
+    def get_name(self) -> str: return str(self.tpd.get_string(self.args[0]))
 
-    def get_scalar_size(self): return self.get_type().get_scalar_size()
+    def get_scalar_size(self) -> int: return self.get_type().get_scalar_size()
 
-    def get_object_type(self):
+    def get_object_type(self) -> Any:
         if self.is_object():
             return self.get_type().get_object_type()
 
-    def is_scalar(self): return self.get_type().is_scalar()
+    def is_scalar(self) -> bool: return self.get_type().is_scalar()
 
-    def is_array(self): return self.get_type().is_array()
+    def is_array(self) -> bool: return self.get_type().is_array()
 
-    def is_object(self): return self.get_type().is_object()
+    def is_object(self) -> bool: return self.get_type().is_object()
 
-    def __str__(self): return self.get_name()
+    def __str__(self) -> str: return self.get_name()
 
 
 class ClassFieldSignature(JavaTypesBase):
 
-    def __init__(self,tpd,index,tags,args):
+    def __init__(self,
+        tpd: "JTypeDictionary",
+        index: int,
+        tags: List[str],
+        args: List[int]):
         JavaTypesBase.__init__(self,tpd,index,tags,args)
         self.cnix = int(self.args[0])
         self.fsix = int(self.args[1])
 
-    def get_signature(self):
+    def get_signature(self) -> "FieldSignature":
         return self.tpd.get_field_signature_data(self.fsix)
 
-    def get_class_name(self):
+    def get_class_name(self) -> "Classname":
         return self.tpd.get_class_name(self.cnix)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.get_class_name()) + '.' + str(self.get_signature())

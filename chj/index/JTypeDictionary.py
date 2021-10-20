@@ -29,11 +29,39 @@ import chj.util.IndexedTable as IT
 
 import chj.index.JType as JT
 
+from typing import Any, cast, Callable, Dict, Optional, List, Union, TypeVar, TYPE_CHECKING
+
 from chj.index.Classname import Classname
 from chj.index.FieldSignature import FieldSignature
 from chj.index.MethodSignature import MethodSignature
 from chj.index.FieldSignature import ClassFieldSignature
 from chj.index.MethodSignature import ClassMethodSignature
+
+import xml.etree.ElementTree as ET
+
+if TYPE_CHECKING:
+    from chj.app.JavaMethod import JavaMethod
+    from chj.index.DataDictionary import DataDictionary
+    from collections.abc import ValuesView
+
+OBJECT_TYPES            = Union[JT.ClassObjectType, JT.ArrayObjectType]
+VALUE_TYPES             = Union[JT.ObjectValueType, JT.BasicValueType]
+DESCRIPTOR_TYPES        = Union[JT.ValueDescriptor, JT.MethodDescriptor]
+CONSTANT_VALUE_TYPES    = Union[JT.ConstString, JT.ConstInt, JT.ConstFloat, JT.ConstLong, JT.ConstDouble, JT.ConstClass]
+METHOD_HANDLE_TYPES     = Union[JT.FieldHandle, JT.MethodHandle, JT.InterfaceHandle]
+CONSTANT_TYPES          = Union[JT.ConstValue, 
+                                JT.ConstField,
+                                JT.ConstMethod,
+                                JT.ConstInterfaceMethod,
+                                JT.ConstDynamicMethod,
+                                JT.ConstNameAndType,
+                                JT.ConstStringUTF8,
+                                JT.ConstMethodHandle,
+                                JT.ConstMethodType,
+                                JT.ConstUnusable]
+BOOTSTRAP_ARG_TYPES     = Union[JT.BootstrapArgConstantValue, 
+                                JT.BootstrapArgMethodHandle, 
+                                JT.BootstrapArgMethodType]
 
 object_type_constructors = {
     'c': lambda x:JT.ClassObjectType(*x),
@@ -86,7 +114,7 @@ bootstrap_argument_constructors = {
 
 class JTypeDictionary(object):
 
-    def __init__(self,jd,xnode):
+    def __init__(self, jd: "DataDictionary", xnode: ET.Element):
         self.jd = jd
         self.string_table = IT.IndexedTable('string-table')
         self.class_name_table = IT.IndexedTable('class-name-table')
@@ -121,50 +149,51 @@ class JTypeDictionary(object):
             (self.bootstrap_method_data_table, self._read_xml_bootstrap_method_data_table) ]
         self.initialize(xnode)
 
-    def get_fields(self):
+    def get_fields(self) -> "ValuesView[ClassFieldSignature]":
         return self.class_field_signature_data_table.indextable.values()
 
-    def get_methods(self):
+    def get_methods(self) -> "ValuesView[ClassMethodSignature]":
         return self.class_method_signature_data_table.indextable.values()
 
-    def get_string(self,ix): return self.string_table.retrieve(ix)
+    def get_string(self, ix: int) -> JT.StringConstant: return self.string_table.retrieve(ix)
 
-    def get_class_name(self,ix): return self.class_name_table.retrieve(ix)
+    def get_class_name(self, ix: int) -> Classname: return self.class_name_table.retrieve(ix)
 
-    def get_field_signature_data(self,ix): return self.field_signature_data_table.retrieve(ix)
+    def get_field_signature_data(self, ix: int) -> FieldSignature: return self.field_signature_data_table.retrieve(ix)
 
-    def get_class_field_signature_data(self,ix):
+    def get_class_field_signature_data(self, ix: int) -> ClassFieldSignature:
         return self.class_field_signature_data_table.retrieve(ix)
 
-    def get_method_signature_data(self,ix):
+    def get_method_signature_data(self, ix: int) -> MethodSignature:
         return self.method_signature_data_table.retrieve(ix)
 
-    def get_class_method_signature_data(self,ix):
+    def get_class_method_signature_data(self, ix: int) -> ClassMethodSignature:
         return self.class_method_signature_data_table.retrieve(ix)
 
-    def get_cms_index(self,tags,args):
+    def get_cms_index(self, tags: List[str], args: List[int]) -> int:
         key = IT.get_key(tags,args)
         if self.class_method_signature_data_table.has_key(key):
             return self.class_method_signature_data_table.get_index(key)
 
-    def get_object_type(self,ix): return self.object_type_table.retrieve(ix)
+    def get_object_type(self, ix: int) -> OBJECT_TYPES: return self.object_type_table.retrieve(ix)
 
-    def get_value_type(self,ix): return self.value_type_table.retrieve(ix)
+    def get_value_type(self, ix: int) -> VALUE_TYPES: return self.value_type_table.retrieve(ix)
 
-    def get_method_descriptor(self,ix): return self.method_descriptor_table.retrieve(ix)
+    def get_method_descriptor(self, ix: int) -> JT.MethodDescriptor: return self.method_descriptor_table.retrieve(ix)
 
-    def get_descriptor(self,ix): return self.descriptor_table.retrieve(ix)
+    def get_descriptor(self, ix: int) -> DESCRIPTOR_TYPES: return self.descriptor_table.retrieve(ix)
 
-    def get_method_handle_type(self,ix): return self.method_handle_type_table.retrieve(ix)
+    def get_method_handle_type(self, ix: int) -> METHOD_HANDLE_TYPES: return self.method_handle_type_table.retrieve(ix)
 
-    def write_xml(self,node):
-        def f(n,r):r.write_xml(n)
+    def write_xml(self, node: ET.Element) -> None:
+        def f(n: ET.Element, r: Any) -> None: 
+            r.write_xml(n)
         for (t,_) in self.tables:
             tnode = ET.Element(t.name)
             t.write_xml(tnode,f)
             node.append(tnode)
 
-    def __str__(self):
+    def __str__(self) -> str:
         lines = []
         for (t,_) in self.tables:
             if t.size() > 0:
@@ -173,119 +202,119 @@ class JTypeDictionary(object):
 
     # ----------------------- Initialize dictionary from file ------------------
  
-    def initialize(self,xnode,force=False):
+    def initialize(self, xnode: Optional[ET.Element], force:bool= False) -> None:
         if xnode is None: return
         for (t,f) in self.tables:
             t.reset()
             f(xnode.find(t.name))
            
-    def _read_xml_string_table(self,txnode):
-        def get_value(node):
+    def _read_xml_string_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> JT.StringConstant:
             rep = IT.get_rep(node)
             args = (self,) + rep
             return JT.StringConstant(*args)
         self.string_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_class_name_table(self,txnode):
-        def get_value(node):
+    def _read_xml_class_name_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> Classname:
             rep = IT.get_rep(node)
             args = (self,) + rep
             return Classname(*args)
         self.class_name_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_object_type_table(self,txnode):
-        def get_value(node):
+    def _read_xml_object_type_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> OBJECT_TYPES:
             rep = IT.get_rep(node)
             tag = rep[1][0]
             args = (self,) + rep
-            return object_type_constructors[tag](args)
+            return cast(OBJECT_TYPES, object_type_constructors[tag](args))
         self.object_type_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_value_type_table(self,txnode):
-        def get_value(node):
+    def _read_xml_value_type_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> VALUE_TYPES:
             rep = IT.get_rep(node)
             tag = rep[1][0]
             args = (self,) + rep
             return value_type_constructors[tag](args)
         self.value_type_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_method_descriptor_table(self,txnode):
-        def get_value(node):
+    def _read_xml_method_descriptor_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> JT.MethodDescriptor:
             rep = IT.get_rep(node)
             args = (self,) + rep
             return JT.MethodDescriptor(*args)
         self.method_descriptor_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_field_signature_data_table(self,txnode):
-        def get_value(node):
+    def _read_xml_field_signature_data_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> FieldSignature:
             rep = IT.get_rep(node)
             args = (self,) + rep
             return FieldSignature(*args)
         self.field_signature_data_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_class_field_signature_data_table(self,txnode):
-        def get_value(node):
+    def _read_xml_class_field_signature_data_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> ClassFieldSignature:
             rep = IT.get_rep(node)
             args = (self,) + rep
             return ClassFieldSignature(*args)
         self.class_field_signature_data_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_method_signature_data_table(self,txnode):
-        def get_value(node):
+    def _read_xml_method_signature_data_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> MethodSignature:
             rep = IT.get_rep(node)
             args = (self,) + rep
             return MethodSignature(*args)
         self.method_signature_data_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_class_method_signature_data_table(self,txnode):
-        def get_value(node):
+    def _read_xml_class_method_signature_data_table(self,txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> ClassMethodSignature:
             rep = IT.get_rep(node)
             args = (self,) + rep
             return ClassMethodSignature(*args)
         self.class_method_signature_data_table.read_xml(txnode,'n',get_value)            
 
-    def _read_xml_descriptor_table(self,txnode):
-        def get_value(node):
+    def _read_xml_descriptor_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> DESCRIPTOR_TYPES:
             rep = IT.get_rep(node)
             tag = rep[1][0]
             args = (self,) + rep
             return descriptor_constructors[tag](args)
         self.descriptor_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_constant_value_table(self,txnode):
-        def get_value(node):
+    def _read_xml_constant_value_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> CONSTANT_VALUE_TYPES:
             rep = IT.get_rep(node)
             tag = rep[1][0]
             args = (self,) + rep
             return constant_value_constructors[tag](args)
         self.constant_value_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_method_handle_type_table(self,txnode):
-        def get_value(node):
+    def _read_xml_method_handle_type_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> METHOD_HANDLE_TYPES:
             rep = IT.get_rep(node)
             tag = rep[1][0]
             args = (self,) + rep
             return method_handle_type_constructors[tag](args)
         self.method_handle_type_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_constant_table(self,txnode):
-        def get_value(node):
+    def _read_xml_constant_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> CONSTANT_TYPES:
             rep = IT.get_rep(node)
             tag = rep[1][0]
             args = (self,) + rep
             return constant_constructors[tag](args)
         self.constant_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_bootstrap_argument_table(self,txnode):
-        def get_value(node):
+    def _read_xml_bootstrap_argument_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> BOOTSTRAP_ARG_TYPES:
             rep = IT.get_rep(node)
             tag = rep[1][0]
             args = (self,) + rep
             return bootstrap_argument_constructors[tag](args)
         self.bootstrap_argument_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_bootstrap_method_data_table(self,txnode):
-        def get_value(node):
+    def _read_xml_bootstrap_method_data_table(self, txnode: Optional[ET.Element]) -> None:
+        def get_value(node: ET.Element) -> JT.BootstrapMethodData:
             rep = IT.get_rep(node)
             args = (self,) + rep
             return JT.BootstrapMethodData(*args)

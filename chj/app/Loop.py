@@ -25,20 +25,63 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+import chj.util.fileutil as UF
+
+from typing import Dict, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.app.JavaMethod import JavaMethod
+    from collections.abc import ItemsView
+    import xml.etree.ElementTree as ET
 
 class Loop(object):
 
-    def __init__(self,jmethod,xnode):
+    def __init__(self,jmethod: "JavaMethod", xnode: "ET.Element"):
         self.jmethod = jmethod          # JavaMethod
         self.jd = jmethod.jd            # DataDictionary
         self.xnode = xnode
-        self.depth = int(self.xnode.get('depth'))
-        self.entry_pc = int(self.xnode.get('entry-pc'))
-        self.first_pc = int(self.xnode.get('first-pc'))
-        self.last_pc = int(self.xnode.get('last-pc'))
-        self.instr_count = int(self.xnode.get('instrs'))
-        self.jumpconditions = {}       # pc -> jumpcondition string
+        self.jumpconditions: Dict[int, str] = {}       # pc -> jumpcondition string
         self._initializejumpconditions()
+
+    @property
+    def depth(self) -> int:
+        xdepth = self.xnode.get('depth')
+        if xdepth is not None:
+            return int(xdepth)
+        else:
+            raise UF.CHJError('depth missing from xml for loop in ' + self.jmethod.get_qname())
+
+    @property
+    def entry_pc(self) -> int:
+        xentry_pc = self.xnode.get('entry-pc')
+        if xentry_pc is not None:
+            return int(xentry_pc)
+        else:
+            raise UF.CHJError('entry-pc missing from xml for loop in ' + self.jmethod.get_qname())
+
+    @property
+    def first_pc(self) -> int:
+        xfirst_pc = self.xnode.get('first-pc')
+        if xfirst_pc is not None:
+            return int(xfirst_pc)
+        else:
+            raise UF.CHJError('first-pc missing from xml for loop in ' + self.jmethod.get_qname())
+
+    @property
+    def last_pc(self) -> int:
+        xlast_pc = self.xnode.get('last-pc')
+        if xlast_pc is not None:
+            return int(xlast_pc)
+        else:
+            raise UF.CHJError('last-pc missing from xml for loop in ' + self.jmethod.get_qname())
+
+    @property
+    def instr_count(self) -> int:
+        xinstr_count = self.xnode.get('instrs')
+        if xinstr_count is not None:
+            return int(xinstr_count)
+        else:
+            raise UF.CHJError('instrs missing from xml for loop in ' + self.jmethod.get_qname())
 
     def get_max_iterations(self):
         result = []
@@ -52,11 +95,12 @@ class Loop(object):
     def get_constant_bounds(self):
         return [ x for x in self.get_max_iterations() if x.is_constant() ]
 
-    def get_max_bound(self):
+    def get_max_bound(self) -> int:
         if self.is_bounded():
             return (max([ int(str(x)) for x in self.get_constant_bounds() ]))
+        raise UF.CHJError("Loop is not bounded")
 
-    def get_bound(self):
+    def get_bound(self) -> str:
         if self.is_bounded():
             mxx = max([ int(str(x)) for x in self.get_constant_bounds() ])
             if mxx >= 2147483645: return 'MAX'
@@ -64,12 +108,14 @@ class Loop(object):
         else:
             return '?'
 
-    def is_bounded(self):
+    def is_bounded(self) -> bool:
         consts = [ x for x in self.get_max_iterations() if x.is_constant() ]
         return (len(consts) > 0)
 
-    def get_pc_jump_conditions(self): return self.jumpconditions.items()
+    def get_pc_jump_conditions(self) -> "ItemsView[int, str]": return self.jumpconditions.items()
 
-    def _initializejumpconditions(self):
-        for j in self.xnode.find('jump-conditions').findall('jump-cond'):
-            self.jumpconditions[int(j.get('pc'))] = j.get('cond')
+    def _initializejumpconditions(self) -> None:
+        errormsg = ' missing from xml for loop in method ' + self.jmethod.get_qname()
+        xjump = UF.safe_find(self.xnode, 'jump-conditions', 'jump-conditions' + errormsg)
+        for j in xjump.findall('jump-cond'):
+            self.jumpconditions[UF.safe_get(j, 'pc', 'pc' + errormsg, int)] = UF.safe_get(j, 'cond', 'cond' + errormsg, str)

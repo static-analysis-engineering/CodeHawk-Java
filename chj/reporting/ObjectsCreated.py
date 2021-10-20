@@ -25,13 +25,18 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+
 class ObjectsCreated(object):
 
-    def __init__(self,app):
+    def __init__(self, app: "AppAccess"):
         self.app = app
         self.objects_created = self.app.get_objects_created()
 
-    def to_string(self):
+    def to_string(self) -> str:
         lines = []
         for (cmsix,mobjects) in self.objects_created:
             lines.append('\n' + self.app.jd.get_cms(cmsix).get_aqname())

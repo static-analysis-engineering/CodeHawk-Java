@@ -27,14 +27,19 @@
 
 import chj.util.printutil as UP
 
+from typing import Dict, List, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+
 class BytecodeReport(object):
 
-    def __init__(self,app,cmsix):
+    def __init__(self, app: "AppAccess", cmsix: int):
         self.app = app
         self.jd = self.app.jd
         self.cmsix = cmsix
 
-    def as_list(self):
+    def as_list(self) -> List[List[str]]:
         jmethod = self.app.get_method(self.cmsix)
         instrs = jmethod.instructions
         lines = []
@@ -43,7 +48,7 @@ class BytecodeReport(object):
             lines.append([str(pc), str(instr)])
         return lines
 
-    def as_dictionary(self):
+    def as_dictionary(self) -> Dict[str, str]:
         jmethod = self.app.get_method(self.cmsix)
         instrs = jmethod.instructions
         result = {}
@@ -51,7 +56,7 @@ class BytecodeReport(object):
             result[str(pc)] = str(instrs[pc])
         return result
 
-    def to_string(self,showstack=False,showtargets=False,showinvariants=False):
+    def to_string(self,showstack: bool=False, showtargets: bool=False, showinvariants: bool=False) -> str:
         jmethod = self.app.get_method(self.cmsix)
         instrs = jmethod.instructions
         lines = []

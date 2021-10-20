@@ -25,17 +25,22 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import Dict, List, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+
 class ObjectFields():
 
-    def __init__(self,app):
+    def __init__(self, app: "AppAccess"):
         self.app = app
         self.fieldwriters = self.app.get_object_field_writers()
         self.fieldreaders = self.app.get_object_field_readers()
 
-    def to_string(self):
+    def to_string(self) -> str:
         lines = []
-        dictwriters = {}
-        dictreaders = {}
+        dictwriters: Dict[int, Dict[int, List[Tuple[int, int]]]] = {}
+        dictreaders: Dict[int, Dict[int, List[Tuple[int, int]]]] = {}
         for (cmsix,mwriters) in self.fieldwriters:
             for (pc,cn,field) in mwriters:
                 cnix = cn.index

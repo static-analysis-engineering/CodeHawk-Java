@@ -27,7 +27,9 @@
 
 import datetime
 
-def cjust(s,l):
+from typing import Any
+
+def cjust(s: str, l: int) -> str:
     s = str(s)
     length = len(s)
     if length >= l: return s
@@ -35,7 +37,7 @@ def cjust(s,l):
     suflen = l - (length + prelen)
     return ((' ' * prelen) + s + (' ' * suflen))
 
-def reportheader(title,application):
+def reportheader(title: str, application: str) -> str:
     lines = []
     lines.append('* ' + ('=' * 80))
     lines.append('* CodeHawk Java Analyzer: ' + title)

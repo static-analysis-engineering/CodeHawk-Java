@@ -27,32 +27,37 @@
 
 from chj.index.JType import JavaTypesBase
 
+from typing import List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.JTypeDictionary import JTypeDictionary
+
 class Classname(JavaTypesBase):
 
-    def __init__(self,tpd,index,tags,args):
+    def __init__(self, tpd: "JTypeDictionary", index: int, tags: List[str], args: List[int]):
         JavaTypesBase.__init__(self,tpd,index,tags,args)
 
-    def get_package_name(self):
+    def get_package_name(self) -> str:
         return '.'.join( [ str(self.tpd.get_string(int(x))) for x in self.args[:-1] ] )
 
-    def get_abbreviated_package_name(self):
+    def get_abbreviated_package_name(self) -> str:
         return ''.join( [ str(self.tpd.get_string(int(x)))[0] for x in self.args[:-1] ])
 
-    def get_qname(self):
+    def get_qname(self) -> str:
         return self.get_package_name() + '.' + self.get_simple_name()
 
-    def get_aqname(self):
+    def get_aqname(self) -> str:
         if len(self.args) > 0:
             return self.get_simple_name()
         else:
             return self.get_abbreviated_package_name() + '.' + self.get_simple_name() 
             
-    def get_simple_name(self): return str(self.tpd.get_string(int(self.args[-1])))
+    def get_simple_name(self) -> str: return str(self.tpd.get_string(int(self.args[-1])))
 
-    def get_name(self):
+    def get_name(self) -> str:
         if len(self.args) > 0:
             return self.get_package_name() + '.' + self.get_simple_name()
         else:
             return self.get_simple_name()
 
-    def __str__(self): return self.get_name()
+    def __str__(self) -> str: return self.get_name()

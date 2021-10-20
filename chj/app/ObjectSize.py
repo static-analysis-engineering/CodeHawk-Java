@@ -25,39 +25,46 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.app.JavaClass import JavaClass
+    from chj.index.FieldSignature import FieldSignature
+    from chj.index.FieldSignature import ClassFieldSignature
+
 class ObjectSize(object):
 
-    def __init__(self,jclass):
-        self.jclass = jclass      # JavaClass
-        self.jd = jclass.jd       # DataDictionary
+    def __init__(self, jclass: "JavaClass"):
+        self.jclass = jclass                        # JavaClass
+        self.jd = jclass.jd                         # DataDictionary
         self.scalar = 0
-        self.objects = []   # [ cnix ]
-        self.arrays = []    # [ FieldSignature ]
+        self.objects: List[int] = []                # [ cnix ]
+        self.arrays: List["FieldSignature"] = []    # [ FieldSignature ]
 
-    def add_scalar(self,s):
+    def add_scalar(self, s: int) -> None:
         self.scalar += s
 
-    def add_object(self,cnix):
+    def add_object(self, cnix: int) -> None:
         self.objects.append(cnix)
 
-    def add_array(self,arr):
+    def add_array(self, arr: "FieldSignature") -> None:
         self.arrays.append(arr)
 
-    def add_field(self,fsig):
+    def add_field(self, fsig: "FieldSignature") -> None:
         self.add_scalar(fsig.get_scalar_size())
         if fsig.is_object(): self.add_object(fsig.get_object_type())
-        if fsig.is_array(): self.add_array(fsig.get_array())
+        if fsig.is_array(): self.add_array(fsig)
 
-    def add_object_size(self,other):
+    def add_object_size(self, other: "ObjectSize") -> None:
         self.scalar += other.scalar
         self.objects.extend(other.objects)
         self.arrays.extend(other.arrays)
 
-    def to_string(self):
+    def to_string(self) -> str:
         lines = []
         lines.append('  scalar size: ' + str(self.scalar))
         if len(self.objects) > 0:
-            pObjs = '. '.join([self.jd.get_cn(cnix) for cnix in self.objects])
+            pObjs = '. '.join([self.jd.get_cn(cnix).get_name() for cnix in self.objects])
             lines.append('  objects    : ' + pObjs)
         if len(self.arrays) > 0:
             lines.append('  arrays     : ' + str(len(self.arrays)))

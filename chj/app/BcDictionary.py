@@ -29,6 +29,14 @@ import chj.util.IndexedTable as IT
 
 import chj.app.Bytecode as BC
 
+from typing import Any, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+    from chj.index.DataDictionary import DataDictionary
+    from chj.app.JavaClass import JavaClass
+    import xml.etree.ElementTree as ET
+
 opcode_constructors = {
     'ld': lambda x: BC.BcLoad(*x),
     'st': lambda x: BC.BcStore(*x),
@@ -89,9 +97,11 @@ opcode_constructors = {
 
 class BcDictionary(object):
 
-    def __init__(self,jclass,xnode):
+    def __init__(self, 
+            jclass: "JavaClass",
+            xnode: "ET.Element"):
         self.jclass = jclass                          # JavaClass
-        self.jd = jclass.jd                           # DataDictionary
+        self.jd: "DataDictionary" = jclass.jd         # DataDictionary
         self.pc_list_table = IT.IndexedTable('pc-list-table')
         self.slot_table = IT.IndexedTable('slot-table')
         self.slot_list_table = IT.IndexedTable('slot-list-table')
@@ -103,22 +113,24 @@ class BcDictionary(object):
             (self.opcode_table, self._read_xml_opcode_table) ]
         self.initialize(xnode)
 
-    def get_opcode(self,ix): return self.opcode_table.retrieve(ix)
+    def get_opcode(self, ix: int) -> Any: return self.opcode_table.retrieve(ix)
 
-    def get_pc_list(self,ix): return self.pc_list_table.retrieve(ix)
+    def get_pc_list(self, ix: int) -> BC.BcPcList: 
+        return self.pc_list_table.retrieve(ix)
 
-    def get_slot(self,ix): return self.slot_table.retrieve(ix)
+    def get_slot(self, ix: int) -> BC.BcSlot: return self.slot_table.retrieve(ix)
 
-    def get_slots(self,ix): return self.slot_list_table.retrieve(ix)
+    def get_slots(self, ix: int) -> BC.BcSlotList: return self.slot_list_table.retrieve(ix)
 
-    def write_xml(self,node):
-        def f(n,r):r.write_xml(n)
+    def write_xml(self, node: "ET.Element") -> None:
+        def f(n: "ET.Element", r: Any) -> None:
+            r.write_xml(n)
         for (t,_) in self.tables:
             tnode = ET.Element(t.name)
             t.write_xml(tnode,f)
             node.append(tnode)
 
-    def __str__(self):
+    def __str__(self) -> str:
         lines = []
         for (t,_) in self.tables:
             if t.size() > 0:
@@ -127,34 +139,34 @@ class BcDictionary(object):
 
     # ----------------------- Initialize dictionary from file ------------------
  
-    def initialize(self,xnode,force=False):
+    def initialize(self, xnode: Optional["ET.Element"], force: bool=False) -> None:
         if xnode is None: return
         for (t,f) in self.tables:
             t.reset()
             f(xnode.find(t.name))
 
-    def _read_xml_pc_list_table(self,txnode):
-        def get_value(node):
+    def _read_xml_pc_list_table(self, txnode: "ET.Element") -> None:
+        def get_value(node : "ET.Element") -> BC.BcPcList:
             rep = IT.get_rep(node)
             args = (self,) + rep
             return BC.BcPcList(*args)
         self.pc_list_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_slot_table(self,txnode):
-        def get_value(node):
+    def _read_xml_slot_table(self, txnode: "ET.Element") -> None:
+        def get_value(node : "ET.Element") -> BC.BcSlot:
             rep = IT.get_rep(node)
             args = (self,) + rep
             return BC.BcSlot(*args)
         self.slot_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_slot_list_table(self,txnode):
-        def get_value(node):
+    def _read_xml_slot_list_table(self, txnode: "ET.Element") -> None:
+        def get_value(node: "ET.Element") -> BC.BcSlotList:
             rep = IT.get_rep(node)
             args = (self,) + rep
             return BC.BcSlotList(*args)
         self.slot_list_table.read_xml(txnode,'n',get_value)
 
-    def _read_xml_opcode_table(self,txnode):
+    def _read_xml_opcode_table(self, txnode: "ET.Element") -> None:
         def get_value(node):
             rep = IT.get_rep(node)
             tag = rep[1][0]

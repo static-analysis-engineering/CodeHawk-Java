@@ -27,13 +27,37 @@
 
 from chj.cost.CostMeasure import CostMeasure
 
+import chj.util.fileutil as UF
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import xml.etree.ElementTree as ET
+    from chj.cost.CostModel import CostModel
+
 class BlockCost():
 
-    def __init__(self,costmodel,xnode):
+    def __init__(self, costmodel: "CostModel", xnode: "ET.Element") -> None:
         self.costmodel = costmodel
         self.xnode = xnode
-        self.pc = int(self.xnode.get('pc'))
-        self.cost = CostMeasure(self.costmodel, self.xnode.find('bcost'))
+        #self.pc = int(self.xnode.get('pc'))
+        #self.cost = CostMeasure(self.costmodel, self.xnode.find('bcost'))
 
-    def __str__(self): 
-        return (str(self.getpc()) + ': ' + str(self.getcost()))
+    @property
+    def pc(self) -> int:
+        pc = self.xnode.get('pc')
+        if pc:
+            return int(pc)
+        else:
+            raise UF.CHJError('PC of Block missing')
+
+    @property
+    def cost(self) -> CostMeasure:
+        bcost = self.xnode.find('bcost')
+        if bcost:
+            return CostMeasure(self.costmodel, bcost)
+        else:
+            raise UF.CHJError('BCost of Block missing')
+
+    def __str__(self) -> str:
+        return (str(self.pc) + ': ' + str(self.cost))

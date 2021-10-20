@@ -34,10 +34,14 @@ import xml.etree.ElementTree as ET
 
 import chj.util.dotutil as UD
 
-def svg_namespace():
+from chj.util.DotGraph import DotGraph
+
+from typing import List, Dict
+
+def svg_namespace() -> Dict[str, str]:
     return {'svg' : 'http://www.w3.org/2000/svg'}
 
-def _get_graph_nodes(svg):
+def _get_graph_nodes(svg: ET.ElementTree) -> List[ET.Element]:
     ns = svg_namespace()
     nodes = []
     elems = svg.findall('svg:g', namespaces=ns)
@@ -48,13 +52,13 @@ def _get_graph_nodes(svg):
                 nodes.append(subelem)
     return nodes
 
-def append_loop_levels(svg, loop_levels):
+def append_loop_levels(svg: ET.ElementTree, loop_levels: Dict[int, int]) -> None:
     nodes = _get_graph_nodes(svg)
     for node in nodes:
         pc = int(node.attrib['pc'])
         node.attrib['ldepth'] = str(loop_levels[pc])
 
-def append_cmsixs(svg, cmsix_dict):
+def append_cmsixs(svg: ET.ElementTree, cmsix_dict: Dict[str, str]) -> None:
     nodes = _get_graph_nodes(svg)
     for node in nodes:
         ns = svg_namespace()
@@ -62,7 +66,7 @@ def append_cmsixs(svg, cmsix_dict):
         if title in cmsix_dict:
             node.attrib['cmsix'] = str(cmsix_dict[title])
 
-def append_pcs(svg, node_pcs):
+def append_pcs(svg: ET.ElementTree, node_pcs: Dict[str, int]) -> None:
     nodes = _get_graph_nodes(svg)
     for node in nodes:
         ns = svg_namespace()
@@ -70,14 +74,14 @@ def append_pcs(svg, node_pcs):
         if title in node_pcs:
             node.attrib['pc'] = str(node_pcs[title])
 
-def save_svg(path, g):
-    dotfilename = os.path.join(path,g.name + '.dot')
-    svgfilename = os.path.join(path,g.name + '.svg')
+def save_svg(path: str, g: DotGraph) -> None:
+    dotfilename = os.path.join(path, g.name + '.dot')
+    svgfilename = os.path.join(path, g.name + '.svg')
     if os.path.isfile(dotfilename):
         cmd = [ 'dot', '-Tsvg', '-o', svgfilename, dotfilename ]
         subprocess.call(cmd, stderr=subprocess.STDOUT)
 
-def get_svg(path, g):
+def get_svg(path: str, g: DotGraph) -> ET.ElementTree:
     graphsdir = os.path.join(path, 'graphs')
     if not os.path.isdir(graphsdir):
         os.mkdir(graphsdir)

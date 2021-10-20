@@ -27,9 +27,16 @@
 
 import chj.util.printutil as UP
 
+from typing import Any, Dict, List, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+    from chj.app.JavaMethod import JavaMethod
+    import chj.index.Taint as T
+
 class LoopSummary(object):
 
-    def __init__(self,app,sources=[]):
+    def __init__(self, app: "AppAccess", sources: List[int]=[]):
         self.app = app
         self.jd = app.jd
         self.sources = sources
@@ -38,7 +45,7 @@ class LoopSummary(object):
         else:
             self.sources = [int(x) for x in sources]
 
-    def as_dictionary(self):
+    def as_dictionary(self) -> Dict[int, Dict[str, Any]]:
         results = {}
         for (cmsix, m) in self.app.get_methods():
             if m.get_loop_count() > 0:
@@ -46,17 +53,17 @@ class LoopSummary(object):
                 loopbounds = ','.join(l.get_bound() for l in loops)
                 looptaints = self._get_loop_taints(m)
                 loopresult = {}
-                loopresult['loopcount'] = m.get_loop_count()
-                loopresult['max-depth'] = m.get_max_depth()
+                loopresult['loopcount'] = str(m.get_loop_count())
+                loopresult['max-depth'] = str(m.get_max_depth())
                 loopresult['loopbounds'] = loopbounds
                 loopresult['looptaints'] = looptaints
                 loopresult['aqname'] = m.get_aqname()
                 results[cmsix] = loopresult
         return results
 
-    def to_string(self):
+    def to_string(self) -> str:
         header = [ ('#loops',8), ('max-depth',14), ('bounds',14), ('taints',14) ]
-        headerline = ''.join([ UP.cjust(t[0],t[1]) for t in header ]) + ' method name (id)'
+        headerline = ''.join([ UP.cjust(str(t[0]),t[1]) for t in header ]) + ' method name (id)'
         result = []
         lines = []
         for (cmsix,m) in self.app.get_methods():
@@ -73,14 +80,14 @@ class LoopSummary(object):
         lines.append(headerline)
         lines.append('-' * 80)
         for t in sorted(result,key=lambda t:t[1],reverse=True):
-            lines.append(UP.cjust(t[0],8) +
-                         UP.cjust(t[1],14) +
-                         UP.cjust(t[2],14) +
-                         UP.cjust(t[3],14) +
+            lines.append(UP.cjust(str(t[0]),8) +
+                         UP.cjust(str(t[1]),14) +
+                         UP.cjust(str(t[2]),14) +
+                         UP.cjust(str(t[3]),14) +
                          str(t[4]) + ' (' + str(t[5]) + ')')
         return '\n'.join(lines)
 
-    def list_to_string(self):
+    def list_to_string(self) -> str:
         lines = []
         header = [ ('entry-pc',8), ('   method',40), ('bound',14) ]
         headerline = '.'.join([ UP.cjust(t[0],t[1]) for t in header ])
@@ -95,9 +102,9 @@ class LoopSummary(object):
                                   str(l.get_bound()).rjust(14)))
         return '\n'.join(lines)
 
-    def taint_list_to_string(self):
-        result = {}
-        for m in self.app.get_methods():
+    def taint_list_to_string(self) -> str:
+        result: Dict[int, List[Tuple["JavaMethod", int, int]]] = {}
+        for (_, m) in self.app.get_methods():
             if m.get_loop_count() > 0:
                 loops = m.get_loops()
                 for l in loops:
@@ -105,7 +112,7 @@ class LoopSummary(object):
                     pc = l.first_pc
                     lctaint = m.get_variable_taint('lc',pc)
                     if not lctaint is None:
-                        untrusted = self.j.gettaintoriginset(lctaint.getuntrustedtaint())
+                        untrusted = self.jd.gettaintoriginset(lctaint.getuntrustedtaint())
                         unknown = self.jd.gettaintoriginset(lctaint.getunknowntaint())
                         origins = set([x.getid() for x in untrusted.getorigins() +
                                            unknown.getorigins()])
@@ -119,17 +126,17 @@ class LoopSummary(object):
             taint = self.jd.get_taint_originsite(t)
             lines.append('\n' + str(t) + ': ' + str(taint))
             for (m,pc,depth) in sorted(result[t],
-                                           key=lambda m,pc,depth:(depth,m.get_aq_name()),reverse=True):
-                lines.append('  ' + m.get_aq_name() + ' @ ' + str(pc) + 
+                                           key=lambda m,pc,depth:(depth,m.get_aqname()),reverse=True):
+                lines.append('  ' + m.get_aqname() + ' @ ' + str(pc) + 
                 ' (inner loops: ' + str(depth) + ')')
         return '\n'.join(lines)
 
-    def taint_from_included_origin(self,tnode):
+    def taint_from_included_origin(self, tnode: "T.VariableTaintNode") -> bool:
         if len(self.sources) == 0: return True
         return tnode.index in self.sources
                                  
 
-    def _get_target_sources(self,origins):
+    def _get_target_sources(self, origins: List[int]) -> str:
         result = []
         for i in origins:
             if i in self.sources: result.append(str(i))
@@ -137,7 +144,7 @@ class LoopSummary(object):
             return('-')
         return ','.join(result)
 
-    def _get_loop_taints(self,m):
+    def _get_loop_taints(self, m: "JavaMethod") -> str:
         result = []
         for l in m.get_loops():
             lctaint = m.get_variable_taint('lc',l.first_pc)
@@ -147,22 +154,22 @@ class LoopSummary(object):
                 result.append('_')
         return ','.join(result)
 
-    def looptaintstostring(self):
-        for m in self.app.getmethods():
+    def looptaintstostring(self) -> None:
+        for (_, m) in self.app.get_methods():
             if m.get_loop_count() > 0:
-                sources = self._get_loop_taint_sources(m)
+                sources = self._getlooptaintsources(m)
                 if len(sources) > 0:
-                    print('\n' + m.get_aq_name())
+                    print('\n' + m.get_aqname())
                     for pc in sources:
                         print('  ' + str(pc))
                         for x in sources[pc]:
                             if x.getid() == 39 or x.getid() == 71:
                                 print('    ' + str(x))
 
-    def _getlooptaintsources(self,m):
-        result = {}
+    def _getlooptaintsources(self, m: "JavaMethod") -> Dict[int, Any]:
+        result: Dict[int, Any] = {}
         for l in m.get_loops():
-            firstpc = l.get_first_pc()
+            firstpc = l.first_pc
             lctaint = m.get_variable_taint('lc',firstpc)
             if not lctaint is None:
                 untrusted = self.jd.get_taint_origin_set(lctaint.getuntrustedtaint())

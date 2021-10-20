@@ -25,15 +25,21 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import Dict, List, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+    from chj.app.JavaMethod import JavaMethod
+
 class ExceptionHandlers():
 
-    def __init__(self,app):
+    def __init__(self, app: "AppAccess"):
         self.app = app
 
-    def as_dictionary(self):
+    def as_dictionary(self) -> Dict[int, List[ Tuple[int, int, int, str, str] ] ]:
         result = []
         table = {}
-        def f(cmsix, m):
+        def f(cmsix: int, m: "JavaMethod") -> None:
             if m.has_exception_table():
                 result.append((cmsix,m.get_exception_table()))
         self.app.iter_methods(f)
@@ -41,17 +47,17 @@ class ExceptionHandlers():
             for ex in t.exceptionhandlers:
                 aqname = str(self.app.jd.get_cms(cmsix).get_aqname())
                 if not cmsix in table:
-                    table[cmsix] = [ [ ex.startpc, ex.endpc, ex.handlerpc,
-                                           ex.get_class_name().get_name(), aqname ] ]
+                    table[cmsix] = [ ( ex.startpc, ex.endpc, ex.handlerpc,
+                                           ex.get_class_name().get_name(), aqname ) ]
                 else:
-                    table[cmsix].append([ ex.startpc, ex.endpc, ex.handlerpc,
-                                              ex.get_class_name().get_name(), aqname ])
+                    table[cmsix].append( ( ex.startpc, ex.endpc, ex.handlerpc,
+                                              ex.get_class_name().get_name(), aqname ) )
         return table
 
-    def tostring(self):
+    def tostring(self) -> str:
         result = []
         lines = []
-        def f(cmsix,m):
+        def f(cmsix: int, m: "JavaMethod") -> None:
             if m.has_exception_table():
                 result.append((cmsix,m.get_exception_table()))
         self.app.iter_methods(f)

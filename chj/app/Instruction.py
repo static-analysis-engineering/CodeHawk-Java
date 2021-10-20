@@ -25,50 +25,96 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import Any, cast, List, Optional, TYPE_CHECKING
+
+import chj.util.fileutil as UF
+
+from chj.app.Bytecode import BcFieldBase
+from chj.app.Bytecode import BcSlotList
+from chj.app.Bytecode import BcStringConst
+from chj.app.Bytecode import JBytecodeBase
+from chj.app.Bytecode import BcInvokeBase
+
+if TYPE_CHECKING:
+    from chj.app.JavaMethod import JavaMethod
+    from chj.index.MethodSignature import MethodSignature
+    from chj.index.FieldSignature import FieldSignature
+    from chj.index.CallgraphDictionary import CallgraphTargetBase
+    from chj.index.Classname import Classname
+    from chj.index.JType import StringConstant
 
 class Instruction(object):
 
-    def __init__(self,jmethod,pc,opc,exprstack,tgts=None):
+    def __init__(self,
+            jmethod: "JavaMethod",
+            pc: int,
+            opc: "JBytecodeBase",
+            exprstack: "BcSlotList",
+            tgts: Optional["CallgraphTargetBase"] = None):
         self.jmethod = jmethod
         self.pc = pc
         self.opc = opc
         self.exprstack = exprstack
         self.tgts = tgts
 
-    def has_targets(self): return not (self.tgts is None)
+    def has_targets(self) -> bool: return not (self.tgts is None)
 
-    def get_targets(self): return self.tgts.cnixs
-
-    def get_cmsix_targets(self):
-        isig = self.opc.get_signature()
+    def get_targets(self) -> List[int]: 
         if self.has_targets():
-            return [ self.jmethod.jd.get_cmsix(cnix,isig.index) for cnix in self.get_targets() ]
+            return cast("CallgraphTargetBase", self.tgts).cnixs
         else:
-            return []
+            raise UF.CHJError("Targets missing from Instruction")
 
-    def get_loop_depth(self):
+    def get_cmsix_targets(self) -> List[int]:
+        if self.opc.is_call():
+            opc = cast("BcInvokeBase", self.opc)
+            isig = opc.get_signature()
+            if self.has_targets():
+                return [ self.jmethod.jd.get_cmsix(cnix,isig.index) for cnix in self.get_targets() ]
+            else:
+                return []
+        else:
+            raise UF.CHJError(str(self.opc) + ' is not a call')
+
+    def get_loop_depth(self) -> int:
         return self.jmethod.get_loop_depth(self.pc)
 
-    def is_call(self): return self.opc.is_call()
+    def is_call(self) -> bool: return self.opc.is_call()
 
-    def is_load_string(self): return self.opc.is_load_string()
+    def is_load_string(self) -> bool: return self.opc.is_load_string()
 
-    def is_put_field(self): return self.opc.is_put_field()
+    def is_put_field(self) -> bool: return self.opc.is_put_field()
 
-    def is_put_static(self): return self.opc.is_put_static()
+    def is_put_static(self) -> bool: return self.opc.is_put_static()
 
-    def is_get_field(self): return self.opc.is_get_field()
+    def is_get_field(self) -> bool: return self.opc.is_get_field()
 
-    def is_get_static(self): return self.opc.is_get_static()
+    def is_get_static(self) -> bool: return self.opc.is_get_static()
 
-    def is_object_created(self): return self.opc.is_object_created()
+    def is_object_created(self) -> bool: return self.opc.is_object_created()
 
-    def get_string_constant(self): return self.opc.get_string_constant()
+    def get_string_constant(self) -> "StringConstant": 
+        if isinstance(self.opc, BcStringConst):
+            return self.opc.get_string_constant()
+        else:
+            raise UF.CHJError(str(self.opc) + ' is not a string constant')
 
-    def get_cn(self): return self.opc.get_cn()
+    def get_cn(self) -> "Classname":
+        if isinstance(self.opc, BcFieldBase):
+            return self.opc.get_cn()
+        else:
+            raise UF.CHJError(str(self.opc) + ' does not have a Classname')
 
-    def get_signature(self): return self.opc.get_signature()
+    def get_signature(self) -> "MethodSignature":
+        if isinstance(self.opc, BcInvokeBase):
+            return self.opc.get_signature()
+        else:
+            raise UF.CHJError(str(self.opc) + ' does not have a signature')
 
-    def get_field(self): return self.opc.get_field()
+    def get_field(self) -> "FieldSignature":
+        if isinstance(self.opc, BcFieldBase):
+            return self.opc.get_field()
+        else:
+            raise UF.CHJError(str(self.opc) + ' does not contain a field')
 
-    def __str__(self): return str(self.opc)
+    def __str__(self) -> str: return str(self.opc)
