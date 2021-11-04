@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2019 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +31,7 @@ import chj.index.JDictionaryRecord as JD
 from typing import Any, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from chj.index.Classname import Classname
     from chj.index.JTypeDictionary import JTypeDictionary
 
 class JavaTypesBase(JD.JDictionaryRecord):
@@ -88,7 +90,7 @@ class ClassObjectType(JavaTypesBase):
             args: List[int]):
         JavaTypesBase.__init__(self,tpd,index,tags,args)
 
-    def get_class(self) -> Any: return self.tpd.jd.get_cn(int(self.args[0]))
+    def get_class(self) -> "Classname": return self.tpd.jd.get_cn(int(self.args[0]))
 
     def is_object(self) -> bool: return True
 
@@ -130,7 +132,7 @@ class ObjectValueType(JavaTypesBase):
 
     def is_array_type(self): return self.get_object_type().is_object_array_type()
 
-    def get_object_type(self): return self.tpd.get_object_type(int(self.args[0]))
+    def get_object_type(self) -> JavaTypesBase: return self.tpd.get_object_type(int(self.args[0]))
 
     def get_class(self): return self.get_object_type().get_class()
 

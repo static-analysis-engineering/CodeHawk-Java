@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -305,6 +306,10 @@ def loadtaintgraph(engagement: str, project: str, index: str) -> Union[str, Dict
     try:
         title = engagement + ":" + project + ":" + index
         app = load_engagement_app(engagement, project)
+    
+        if app.jd.ttd is None:
+            raise UF.CHJError('Taint analysis results do not exist! Please create them first')
+
         name = str(app.jd.ttd.get_taint_origin(int(index)))
 
         new_app = UA.analyze_taint_propagation(project, int(index))
@@ -332,11 +337,13 @@ def loadtaintgraph(engagement: str, project: str, index: str) -> Union[str, Dict
     else:
         if request.method == 'GET':
             return template
-        if request.method == 'POST':
+        elif request.method == 'POST':
             result['meta']['status'] = 'ok'
             result['content'] = {}
             result['content']['svg'] = Markup(svg)
             return result
+        else:
+            raise UF.CHJError("Unknown Methods Parameter. Options are \"Get\" and \"Post\"")
 
 def load_engagement_app(engagement: str, project: str) -> AP.AppAccess:
     (path, jars) = UF.get_engagement_app_data(project)

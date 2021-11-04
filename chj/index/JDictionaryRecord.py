@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2017-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -31,16 +32,16 @@ import chj.util.IndexedTable as IT
 
 from typing import List, Tuple
 
-class JDictionaryRecord(object):
+class JDictionaryRecord(IT.IndexedTableValue):
     """Base class for all objects kept in the JDictionary."""
 
-    def __init__(self, index: int, tags: List[str], args: List[int]) -> None:
+    def __init__(self,
+            index: int,
+            tags: List[str],
+            args: List[int]) -> None:
         self.index = index
         self.tags = tags
         self.args = args
-
-    #def __init__(self, ixval: IndexedTableValue) -> None:
-    #    IndexedTableValue.__init__(self, ixval.index, ixval.tags, ixval.args)
 
     def get_key(self) -> Tuple[str, str] : return (','.join(self.tags), ','.join([str(x) for x in self.args]))
 

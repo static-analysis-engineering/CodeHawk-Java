@@ -37,14 +37,14 @@ if TYPE_CHECKING:
 
 class BlockCost():
 
-    def __init__(self, costmodel: "CostModel", xnode: "ET.Element") -> None:
+    def __init__(self, costmodel: "CostModel", xnode: "ET.Element"):
         self.costmodel = costmodel
         self.xnode = xnode
         #self.pc = int(self.xnode.get('pc'))
         #self.cost = CostMeasure(self.costmodel, self.xnode.find('bcost'))
 
     @property
-    def pc(self) -> int:
+    def pc(self):
         pc = self.xnode.get('pc')
         if pc:
             return int(pc)
@@ -52,12 +52,12 @@ class BlockCost():
             raise UF.CHJError('PC of Block missing')
 
     @property
-    def cost(self) -> CostMeasure:
+    def cost(self):
         bcost = self.xnode.find('bcost')
         if bcost:
             return CostMeasure(self.costmodel, bcost)
         else:
             raise UF.CHJError('BCost of Block missing')
 
-    def __str__(self) -> str:
+    def __str__(self):
         return (str(self.pc) + ': ' + str(self.cost))

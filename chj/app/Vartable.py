@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -80,7 +81,7 @@ class VartableSlot():
 
     @property
     def endpc(self) -> int:
-        endpc = self.xnode.get('endpc')
+        endpc = self.xnode.get('epc')
         if endpc is not None:
             return int(endpc)
         else:
@@ -128,6 +129,7 @@ class Vartable():
         for (ix,spc) in self.table:
             if ix == index and pc >= spc and pc <= self.table[(ix,spc)].endpc:
                 return self.table[(ix,spc)].name.get_string()
+        raise UF.CHJError("Could not find name for ix: " + str(ix) + " and spc: " + str(spc) + " in Vartable")
 
     def _initializetable(self) -> None:
         for s in self.xnode.findall('slot'):

@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +31,7 @@ import chj.util.fileutil as UF
 
 import chj.index.JDictionaryRecord as JD
 
-from typing import Any, List, Union, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Tuple, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chj.index.MethodSignature import MethodSignature
@@ -167,15 +168,15 @@ class EmptyTarget(CallgraphTargetBase):
     def __str__(self) -> str:
         return 'empty:' + str(self.get_class_name()) + str(self.get_method_signature())
                                   
-
-method_target_constructors = {
+method_target_constructors: Dict[
+    str,
+    Callable[[Tuple["CallgraphDictionary", int, List[str], List[int]]], "CallgraphTargetBase"]
+] = {
     'nv': lambda x: NonVirtualTarget(*x),
     'cv': lambda x: ConstrainedVirtualTargets(*x),
     'v':  lambda x: VirtualTargets(*x),
     'empty': lambda x: EmptyTarget(*x)
     }
-
-METHOD_TARGET_TYPES = Union[NonVirtualTarget, ConstrainedVirtualTargets, VirtualTargets, EmptyTarget]
 
 class CallgraphDictionary(object):
 
@@ -183,15 +184,15 @@ class CallgraphDictionary(object):
             jd: "DataDictionary",
             xnode: "ET.Element"):
         self.jd = jd
-        self.target_table = IT.IndexedTable('target-table')
+        self.target_table: IT.IndexedTable["CallgraphTargetBase"] = IT.IndexedTable('target-table')
         self.tables = [
             (self.target_table, self._read_xml_target_table)
             ]
         self.initialize(xnode)
 
-    def get_target(self, ix: int) -> METHOD_TARGET_TYPES: return self.target_table.retrieve(ix)
+    def get_target(self, ix: int) -> "CallgraphTargetBase": return self.target_table.retrieve(ix)
 
-    def read_xml_target(self, node: "ET.Element", tag: str='itgt') -> METHOD_TARGET_TYPES:
+    def read_xml_target(self, node: "ET.Element", tag: str='itgt') -> "CallgraphTargetBase":
         return self.get_target(UF.safe_get(node, tag, 'tag missing from xml of CallgraphDictionary', int))
 
     def write_xml(self, node: "ET.Element") -> None:
@@ -218,7 +219,7 @@ class CallgraphDictionary(object):
             f(UF.safe_find(xnode, t.name, 'Missing xml for table ' + t.name))
 
     def _read_xml_target_table(self, txnode: "ET.Element") -> None:
-        def get_value(node: "ET.Element") -> METHOD_TARGET_TYPES:
+        def get_value(node: "ET.Element") -> "CallgraphTargetBase":
             rep = IT.get_rep(node)
             tag = rep[1][0]
             args = (self,) + rep

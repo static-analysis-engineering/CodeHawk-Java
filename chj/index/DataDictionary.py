@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +33,7 @@ from chj.index.TaintDictionary import TaintDictionary
 from chj.index.CallgraphDictionary import CallgraphDictionary
 from chj.index.JTermDictionary import JTermDictionary
 
-from typing import Callable, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import Callable, cast, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chj.index.AppAccess import AppAccess
@@ -43,13 +44,6 @@ if TYPE_CHECKING:
     from chj.index.MethodSignature import MethodSignature
     from chj.index.MethodSignature import ClassMethodSignature
     import chj.index.Taint as T
-
-    TORIGIN_CONSTRUCTOR_TYPE = Union[T.VariableTaint,
-                                    T.FieldTaint,
-                                    T.CallerTaint,
-                                    T.TopTargetTaint,
-                                    T.StubTaint]
-
 
 class DataDictionary():
 
@@ -111,16 +105,17 @@ class DataDictionary():
     def iter_methods(self, f:Callable[["ClassMethodSignature"], None]) -> None:
         '''iterates over class method signatures of application classes'''
         cnindices = self.appclassindices.values()
-        for m in sorted(self.tpd.get_methods()):
+        for m in sorted(self.tpd.get_methods(), key=lambda x: self.get_cmsix(x.cnix, x.msix)):
             if m.cnix in cnindices: f(m)
 
     def iter_method_signature_targets(self,f: Callable[[int, Tuple[List[int], List[int], List[int]]], None]) -> None:
         for (msix,tgts) in self.mstargets.items(): f(msix,tgts)
 
-    def iter_taint_origins(self, f: Callable[["TORIGIN_CONSTRUCTOR_TYPE"], None]) -> None:
+    def iter_taint_origins(self, f: Callable[["T.TaintBase"], None]) -> None:
         if self.ttd != None:
-            taintorigins = self.ttd.get_taint_origins()
-            for m in self.ttd.get_taint_origins(): f(m)
+            taintdictionary = cast(TaintDictionary, self.ttd)
+            taintorigins = taintdictionary.get_taint_origins()
+            for m in taintdictionary.get_taint_origins(): f(m)
         else:
             print('Taint Dictionary not found!')
 
@@ -233,18 +228,18 @@ class DataDictionary():
                 msname = UF.safe_get(xms, 'name', 'name missing from xml', str)
                 mssig = UF.safe_get(xms, 'sig', 'sig missing from xml', str)
                 xstubs = xms.findall('stubs')
-                stubs = []
+                stubs: List[int] = []
                 if len(xstubs) > 0:
                     for xstub in xstubs:
                         if 'ixs' in xstub.attrib:
                             stubs += [ int(x) for x in UF.safe_get(xstub, 'ixs', 'ixs missing from xml', str).split(',') ]
-                appmethods = []
+                appmethods: List[int] = []
                 xbcs = xms.findall('bc')
                 if len(xbcs) > 0:
                     for xbc in xbcs:
                         if 'ixs' in xbc.attrib:
                             appmethods += [ int(x) for x in UF.safe_get(xbc, 'ixs', 'ixs missing from xml', str).split(',') ]
-                natives = []
+                natives: List[int] = []
                 xnatives = xms.findall('native')
                 if len(xnatives) > 0:
                     for xnative in xnatives:

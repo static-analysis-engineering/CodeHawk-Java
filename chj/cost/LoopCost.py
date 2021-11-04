@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -42,8 +43,8 @@ class LoopCost():
         self.mc = mc                                # MethodCost
         self.jtd: "JTermDictionary" = mc.jtd        # JTermDictionary
         self.xnode = xnode
-        self.one_iteration_cost: Optional[CostMeasure] = None
-        self.iteration_count: Optional[CostMeasure] = None
+        self.one_iteration_cost: CostMeasure
+        self.iteration_count: CostMeasure
         self._initialize()
 
     @property

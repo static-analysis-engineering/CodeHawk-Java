@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +62,10 @@ class SummaryTimeCost(object):
     def get_constant_cost(self) -> int:
         xcost = UF.safe_find(self.xnode, 'cost', self.methodsum.get_name() + ' cost missing from xml')
         xcn = UF.safe_find(xcost, 'cn', self.methodsum.get_name() + ' cn missing from xml')
-        return int(xcn.text)
+        if xcn.text is not None:
+            return int(xcn.text)
+        else:
+            raise UF.CHJError(self.methodsum.get_name() + ' text missing from xml')
 
     def get_interval_cost(self) -> Tuple[int, int]:
         if self.is_interval_cost():

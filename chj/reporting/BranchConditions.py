@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +26,7 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-from typing import Dict, List, Tuple, Union, TYPE_CHECKING
+from typing import cast, Dict, List, Tuple, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chj.index.AppAccess import AppAccess
@@ -77,7 +78,7 @@ class BranchConditions():
         for (name, cond) in result:
             if cond in table:
                 if isinstance(table[cond], int):
-                    table[cond] += 1
+                    table[cond] = cast(int, table[cond]) + 1
                 else:
                     table[cond] = 2
             else:
@@ -107,7 +108,7 @@ class BranchConditions():
             if s in cond:
                 if cond in table:
                     if isinstance(table[cond], int):
-                        table[cond] += 1
+                        table[cond] = cast(int, table[cond]) + 1
                     else:
                         table[cond] = 2
                 else:

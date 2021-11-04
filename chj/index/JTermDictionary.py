@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,33 +26,22 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-from typing import cast, Optional, Tuple, Union, TYPE_CHECKING
+from typing import Callable, cast, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chj.index.DataDictionary import DataDictionary
 
 import chj.util.IndexedTable as IT
+import chj.util.fileutil as UF
 
 import chj.index.JTerm as JT
 
 import xml.etree.ElementTree as ET
 
-JTERM_TYPE = Union[ JT.JTAuxiliaryVar,
-                    JT.JTLocalVar,
-                    JT.JTLoopCounter,
-                    JT.JTConstant,
-                    JT.JTStaticFieldValue,
-                    JT.JTObjectFieldValue,
-                    JT.JTBoolConstant,
-                    JT.JTFloatConstant,
-                    JT.JTermStringConstant,
-                    JT.JTArrayLength,
-                    JT.JTStringLength,
-                    JT.JTSize,
-                    JT.JTArithmeticExpr,
-                    JT.JTSymbolicConstant]
-
-jterm_constructors = {
+jterm_constructors: Dict[
+    str,
+    Callable[[Tuple["JTermDictionary", int, List[str], List[int]]], JT.JTermBase]   
+] = {
     'xv': lambda x:JT.JTAuxiliaryVar(*x),
     'lv': lambda x:JT.JTLocalVar(*x),
     'lc': lambda x:JT.JTLoopCounter(*x),
@@ -72,16 +62,16 @@ class JTermDictionary(object):
 
     def __init__(self, jd: "DataDictionary", xnode: ET.Element):
         self.jd = jd
-        self.symbolic_jterm_constant_table = IT.IndexedTable('symbolic-jterm-constant-table')
-        self.string_table = IT.IndexedTable('string-table')
-        self.numerical_table = IT.IndexedTable('numerical-table')
-        self.float_table = IT.IndexedTable('float-table')
-        self.jterm_table = IT.IndexedTable('jterm-table')
-        self.relational_expr_table = IT.IndexedTable('relational-expr-table')
-        self.jterm_list_table = IT.IndexedTable('jterm-list-table')
-        self.relational_expr_list_table = IT.IndexedTable('relational-expr-list-table')
-        self.jterm_range_table = IT.IndexedTable('jterm-range-table')
-        self.tables = [
+        self.symbolic_jterm_constant_table: IT.IndexedTable[JT.JTSymbolicJTermConstant] = IT.IndexedTable('symbolic-jterm-constant-table')
+        self.string_table: IT.IndexedTable[JT.JTStringConstant] = IT.IndexedTable('string-table')
+        self.numerical_table: IT.IndexedTable[JT.JTNumerical] = IT.IndexedTable('numerical-table')
+        self.float_table: IT.IndexedTable[JT.JTFloat] = IT.IndexedTable('float-table')
+        self.jterm_table: IT.IndexedTable[JT.JTermBase] = IT.IndexedTable('jterm-table')
+        self.relational_expr_table: IT.IndexedTable[JT.JTRelationalExpr] = IT.IndexedTable('relational-expr-table')
+        self.jterm_list_table: IT.IndexedTable[JT.JTermList] = IT.IndexedTable('jterm-list-table')
+        self.relational_expr_list_table: IT.IndexedTable[JT.JTRelationalExprList] = IT.IndexedTable('relational-expr-list-table')
+        self.jterm_range_table: IT.IndexedTable[JT.JTermRange] = IT.IndexedTable('jterm-range-table')
+        self.tables: List[Tuple[IT.IndexedTableSuperclass, Callable[[ET.Element], None]]] = [
             (self.symbolic_jterm_constant_table, self._read_xml_symbolic_jterm_constant_table),
             (self.string_table, self._read_xml_string_table),
             (self.numerical_table, self._read_xml_numerical_table),
@@ -105,7 +95,7 @@ class JTermDictionary(object):
     def get_float(self, ix: int) -> JT.JTFloat:
         return self.float_table.retrieve(ix)
 
-    def get_jterm(self, ix: int) -> JTERM_TYPE: return self.jterm_table.retrieve(ix)
+    def get_jterm(self, ix: int) -> JT.JTermBase: return self.jterm_table.retrieve(ix)
 
     def get_relational_expr(self, ix: int) -> JT.JTRelationalExpr:
         return self.relational_expr_table.retrieve(ix)
@@ -150,7 +140,7 @@ class JTermDictionary(object):
         def f(index,key): return JT.JTConstant(self,index,tags,args)
         return self.jterm_table.add(IT.get_key(tags,args),f)
 
-    def mk_constant_jterm(self, v: int):
+    def mk_constant_jterm(self, v: int) -> JT.JTermBase:
         return self.get_jterm(self.index_constant_jterm(v))
 
     def index_arithmetic_jterm(self,jt1,jt2,op):
@@ -188,7 +178,7 @@ class JTermDictionary(object):
         if xnode is None: return
         for (t,f) in self.tables:
             t.reset()
-            f(xnode.find(t.name))
+            f(UF.safe_find(xnode, t.name, t.name + ' missing from xml'))
            
     def _read_xml_string_table(self, txnode: Optional[ET.Element]) -> None:
         def get_value(node: ET.Element) -> JT.JTStringConstant:
@@ -219,7 +209,7 @@ class JTermDictionary(object):
         self.float_table.read_xml(txnode,'n',get_value)
 
     def _read_xml_jterm_table(self, txnode: Optional[ET.Element]) -> None:
-        def get_value(node: ET.Element):
+        def get_value(node: ET.Element) -> JT.JTermBase:
             rep = IT.get_rep(node)
             tag = rep[1][0]
             args = (self,) + rep

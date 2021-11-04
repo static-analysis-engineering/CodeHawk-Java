@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -263,7 +264,7 @@ class JTStaticFieldValue(JTermBase):
         return self.jtd.jd.get_cn(self.get_cnix()).get_name()
 
     def get_field_name(self) -> str:
-        return str(self.jtd.jd.ttd.get_string(int(self.args[0])))
+        return str(self.jtd.get_string(int(self.args[0])))
 
     def is_symbolic_expr(self) -> bool: return True        
 

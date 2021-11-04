@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -68,7 +69,7 @@ class SideChannelCheck:
 
     def get_full_paths(self) -> List[List[int]]:
         cfg = self.get_method().get_cfg()
-        return cfg.enumerate_paths(self.decisionpc,self.observationpc)
+        return cfg.enumerate_paths(self.decisionpc, self.observationpc)
 
     def get_full_paths_through_pc(self, pc: int) -> List[List[int]]:
         fullpaths = self.get_full_paths()
@@ -127,16 +128,16 @@ class SideChannelCheck:
                              
         lines.append('  path through pc=        cost')
         lines.append('-' * 80)
-        for p in sorted(fullpaths):
-            lbblockcosts = [ self.jmc.get_block_cost(pc).cost.get_lower_bounds().get_jterms()[0] for pc in p ]
-            ubblockcosts = [ self.jmc.get_block_cost(pc).cost.get_upper_bounds().get_jterms()[0] for pc in p ]
+        for n in sorted(fullpaths):
+            lbblockcosts = [ self.jmc.get_block_cost(pc).cost.get_lower_bounds().get_jterms()[0] for pc in n ]
+            ubblockcosts = [ self.jmc.get_block_cost(pc).cost.get_upper_bounds().get_jterms()[0] for pc in n ]
             lbcost = lbblockcosts[0]
             ubcost = ubblockcosts[0]
             for c in lbblockcosts:
                 lbcost = lbcost.add(c).simplify()
             for c in ubblockcosts:
                 ubcost = ubcost.add(c).simplify()
-            lines.append('  ' + str(p).rjust(45) + ': [' + str(lbcost).rjust(20) + ' ; ' + str(ubcost).rjust(20) + ']')
+            lines.append('  ' + str(n).rjust(45) + ': [' + str(lbcost).rjust(20) + ' ; ' + str(ubcost).rjust(20) + ']')
 
         lines.append(' ')
         for p in sorted(self.paths):

@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,35 +26,27 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-import chj.util.IndexedTable as IT
 import chj.util.fileutil as UF
+import chj.util.IndexedTable as IT
+from chj.util.IndexedTable import (
+    IndexedTable,
+    IndexedTableValue,
+    IndexedTableSuperclass
+)
 
 import chj.index.Taint as T
 import xml.etree.ElementTree as ET
 
-from typing import Any, Callable, cast, Union, TYPE_CHECKING
+from typing import Any, Callable, Dict, cast, List, Optional, Union, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import ValuesView
     from chj.index.DataDictionary import DataDictionary
 
-TORIGIN_CONSTRUCTOR_TYPE = Union[T.VariableTaint, 
-                                    T.FieldTaint, 
-                                    T.CallerTaint, 
-                                    T.TopTargetTaint,
-                                    T.StubTaint]
-
-TAINT_NODE_TYPES = Union[T.FieldTaintNode,
-                    T.VariableTaintNode,
-                    T.VariableEqTaintNode,
-                    T.CallTaintNode,
-                    T.UnknownCallTaintNode,
-                    T.ObjectFieldTaintNode,
-                    T.ConditionalTaintNode,
-                    T.SizeTaintNode,
-                    T.RefEqualTaintNode]
-
-taint_origin_constructors = {
+taint_origin_constructors: Dict[
+    str,
+    Callable[[Tuple["TaintDictionary", int, List[str], List[int]]], T.TaintBase]
+] = {
     'v': lambda x:T.VariableTaint(*x),
     'f': lambda x:T.FieldTaint(*x),
     'c': lambda x:T.CallerTaint(*x),
@@ -61,7 +54,10 @@ taint_origin_constructors = {
     's': lambda x:T.StubTaint(*x)
     }
 
-taint_node_type_constructors = {
+taint_node_type_constructors: Dict[
+    str,
+    Callable[[Tuple["TaintDictionary", int, List[str], List[int]]], T.TaintNodeBase]
+] = {
     'f': lambda x:T.FieldTaintNode(*x),
     'v': lambda x:T.VariableTaintNode(*x),
     'q': lambda x:T.VariableEqTaintNode(*x),
@@ -77,16 +73,16 @@ class TaintDictionary(object):
 
     def __init__(self, jd: "DataDictionary", xnode: ET.Element):
         self.jd = jd                  # DataDictionary
-        self.string_table = IT.IndexedTable('string-table')
-        self.symbol_table = IT.IndexedTable('symbol-table')
-        self.variable_table = IT.IndexedTable('variable-table')
-        self.method_target_table = IT.IndexedTable('method-target-table')
-        self.taint_origin_table = IT.IndexedTable('taint-origin-table')
-        self.taint_origin_list_table = IT.IndexedTable('taint-origin-list-table')
-        self.tainted_variable_table = IT.IndexedTable('tainted-variable-table')
-        self.tainted_variable_ids_table = IT.IndexedTable('tainted-variable-ids-table')
-        self.taint_node_type_table = IT.IndexedTable('taint-node-type-table')
-        self.tables = [
+        self.string_table: IT.IndexedTable[T.TStringConstant] = IT.IndexedTable('string-table')
+        self.symbol_table: IT.IndexedTable[T.TSymbol] = IT.IndexedTable('symbol-table')
+        self.variable_table: IT.IndexedTable[T.TVariable] = IT.IndexedTable('variable-table')
+        self.method_target_table: IT.IndexedTable[T.TMethodTarget] = IT.IndexedTable('method-target-table')
+        self.taint_origin_table: IT.IndexedTable[T.TaintBase] = IT.IndexedTable('taint-origin-table')
+        self.taint_origin_list_table: IT.IndexedTable[T.TaintOriginList] = IT.IndexedTable('taint-origin-list-table')
+        self.tainted_variable_table: IT.IndexedTable[T.TaintedVariable] = IT.IndexedTable('tainted-variable-table')
+        self.tainted_variable_ids_table: IT.IndexedTable[T.TaintedVariableIds] = IT.IndexedTable('tainted-variable-ids-table')
+        self.taint_node_type_table: IT.IndexedTable[T.TaintNodeBase] = IT.IndexedTable('taint-node-type-table')
+        self.tables: List[Tuple[IT.IndexedTableSuperclass, Callable[[ET.Element], None]]] = [
             (self.string_table, self._read_xml_string_table),
             (self.symbol_table, self._read_xml_symbol_table),
             (self.variable_table, self._read_xml_variable_table),
@@ -111,7 +107,7 @@ class TaintDictionary(object):
     def get_method_target(self, ix: int) -> T.TMethodTarget:
         return self.method_target_table.retrieve(ix)
 
-    def get_taint_origin(self, ix: int) -> TORIGIN_CONSTRUCTOR_TYPE:
+    def get_taint_origin(self, ix: int) -> T.TaintBase:
         return self.taint_origin_table.retrieve(ix)
 
     def get_taint_origin_list(self, ix: int) -> T.TaintOriginList:
@@ -123,19 +119,19 @@ class TaintDictionary(object):
     def get_tainted_variable_ids(self, ix: int) -> T.TaintedVariableIds:
         return self.tainted_variable_ids_table.retrieve(ix)
 
-    def get_taint_origins(self) -> "ValuesView[TORIGIN_CONSTRUCTOR_TYPE]": 
+    def get_taint_origins(self) -> List[T.TaintBase]: 
         return self.taint_origin_table.values()
 
-    def get_taint_node_type(self, ix: int) -> TAINT_NODE_TYPES:
+    def get_taint_node_type(self, ix: int) -> T.TaintNodeBase:
         return self.taint_node_type_table.retrieve(ix)
 
-    def iter_taint_node_types(self, f: Callable[[int, TAINT_NODE_TYPES], None]) -> None:
+    def iter_taint_node_types(self, f: Callable[[int, T.TaintNodeBase], None]) -> None:
         self.taint_node_type_table.iter(f)
 
-    def iter_var_taint_node_types(self,f: Callable[[int, TAINT_NODE_TYPES], None]) -> None:
-        def g(i: Any, n: TAINT_NODE_TYPES) -> None:
+    def iter_var_taint_node_types(self,f: Callable[[int, T.VariableTaintNode], None]) -> None:
+        def g(i: Any, n: T.TaintNodeBase) -> None:
             if n.is_var():
-                cast(T.VariableTaintNode, n)
+                n = cast(T.VariableTaintNode, n)
                 f(i,n)
             else: pass
         self.iter_taint_node_types(g)
@@ -149,7 +145,7 @@ class TaintDictionary(object):
         def f(n: ET.Element, r: Any) -> None:r.write_xml(n)
         for (t,_) in self.tables:
             tnode = ET.Element(t.name)
-            t.write_xml(tnode,f)
+            cast(IndexedTable[IndexedTableValue], t).write_xml(tnode,f)
             node.append(tnode)
 
     def __str__(self) -> str:
@@ -161,11 +157,11 @@ class TaintDictionary(object):
 
     # ----------------------- Initialize dictionary from file ------------------
  
-    def initialize(self, xnode: ET.Element, force: bool=False) -> None:
+    def initialize(self, xnode: Optional[ET.Element], force: bool=False) -> None:
         if xnode is None: return
         for (t,f) in self.tables:
             t.reset()
-            f(xnode.find(t.name))
+            f(UF.safe_find(xnode, t.name, t.name + ' missing from xml'))
            
     def _read_xml_string_table(self, txnode: ET.Element) -> None:
         def get_value(node: ET.Element) -> T.TStringConstant:
@@ -196,7 +192,7 @@ class TaintDictionary(object):
         self.method_target_table.read_xml(txnode,'n',get_value)
 
     def _read_xml_taint_origin_table(self, txnode: ET.Element) -> None:
-        def get_value(node: ET.Element) -> TORIGIN_CONSTRUCTOR_TYPE:
+        def get_value(node: ET.Element) -> T.TaintBase:
             rep = IT.get_rep(node)
             tag = rep[1][0]
             args = (self,) + rep
@@ -225,7 +221,7 @@ class TaintDictionary(object):
         self.tainted_variable_ids_table.read_xml(txnode,'n',get_value)
 
     def _read_xml_taint_node_type_table(self, txnode: ET.Element) -> None:
-        def get_value(node: ET.Element) -> TAINT_NODE_TYPES:
+        def get_value(node: ET.Element) -> T.TaintNodeBase:
             rep = IT.get_rep(node)
             tag = rep[1][0]
             args = (self,) + rep

@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -85,6 +86,9 @@ class TaintGraph():
         raise UF.CHJError("Root missing from TaintGraph")
 
     def _build_graph(self, appname: str, taintsourceid: str) -> None:
+        if self.jd.ttd is None:
+            raise UF.CHJError("Taint analysis results not found! Please create them first")
+
         self._get_edges(appname, taintsourceid)
 
         pathnodes: Set[int] = set([])
@@ -103,7 +107,7 @@ class TaintGraph():
             if self.loops:
                 for n in self.nodes:
                     cms = self.jd.ttd.get_taint_node_type(n)
-                    if cms.is_var() and str(cast(T.VariableTaintNode,cms).get_variable()) == 'lc':
+                    if cms.is_var() and str(cast(T.VariableTaintNode, cms).get_variable()) == 'lc':
                         sinkids.append(n)
 
             edge_adjacencylists: Dict[int, List[int]] = {}
@@ -145,6 +149,9 @@ class TaintGraph():
         return
 
     def as_dot(self, taintsourceid: str) -> DotGraph:
+        if self.app.jd.ttd is None:
+            raise UF.CHJError("Taint analysis results not found! Please create them first")
+
         graphname = 'trail_' + str(taintsourceid)
         dotgraph = DotGraph(graphname)
         for n in self.nodes:

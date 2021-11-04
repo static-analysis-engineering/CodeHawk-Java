@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -102,8 +103,8 @@ class LoopSummary(object):
                                   str(l.get_bound()).rjust(14)))
         return '\n'.join(lines)
 
-    def taint_list_to_string(self) -> str:
-        result: Dict[int, List[Tuple["JavaMethod", int, int]]] = {}
+    def taint_list_to_string(self):
+        result = {}
         for (_, m) in self.app.get_methods():
             if m.get_loop_count() > 0:
                 loops = m.get_loops()
@@ -166,8 +167,8 @@ class LoopSummary(object):
                             if x.getid() == 39 or x.getid() == 71:
                                 print('    ' + str(x))
 
-    def _getlooptaintsources(self, m: "JavaMethod") -> Dict[int, Any]:
-        result: Dict[int, Any] = {}
+    def _getlooptaintsources(self, m):
+        result = {}
         for l in m.get_loops():
             firstpc = l.first_pc
             lctaint = m.get_variable_taint('lc',firstpc)

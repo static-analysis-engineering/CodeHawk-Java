@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +26,12 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-from typing import Dict, List, Tuple, TYPE_CHECKING
+from typing import cast, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chj.index.AppAccess import AppAccess
     from chj.app.JavaMethod import JavaMethod
+    from chj.app.ExceptionTable import ExceptionTable
 
 class ExceptionHandlers():
 
@@ -38,12 +40,13 @@ class ExceptionHandlers():
 
     def as_dictionary(self) -> Dict[int, List[ Tuple[int, int, int, str, str] ] ]:
         result = []
-        table = {}
+        table: Dict[int, List[Tuple[int, int, int, str, str]]] = {}
         def f(cmsix: int, m: "JavaMethod") -> None:
             if m.has_exception_table():
                 result.append((cmsix,m.get_exception_table()))
         self.app.iter_methods(f)
         for (cmsix,t) in result:
+            t = cast("ExceptionTable", t)       #guaranteed by has_exception_table check
             for ex in t.exceptionhandlers:
                 aqname = str(self.app.jd.get_cms(cmsix).get_aqname())
                 if not cmsix in table:
@@ -51,7 +54,7 @@ class ExceptionHandlers():
                                            ex.get_class_name().get_name(), aqname ) ]
                 else:
                     table[cmsix].append( ( ex.startpc, ex.endpc, ex.handlerpc,
-                                              ex.get_class_name().get_name(), aqname ) )
+                                           ex.get_class_name().get_name(), aqname ) )
         return table
 
     def tostring(self) -> str:
@@ -64,6 +67,7 @@ class ExceptionHandlers():
         lines.append(' ')
         lines.append('start-pc  end-pc  handler-pc')
         for (cmsix,t) in result:
+            t = cast("ExceptionTable", t)       #guaranteed by has_exception_table check
             lines.append(' ')
             lines.append(self.app.jd.get_cms(cmsix).get_aqname())
             lines.append(t.tostring())

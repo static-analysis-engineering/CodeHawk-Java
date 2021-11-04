@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +54,7 @@ class DirectedGraph(object):
         path.pop()
         visited[src] = False
 
-    def find_paths(self,src: int,dst: int) -> None:
+    def find_paths(self, src: int, dst: int) -> None:
         visited = {}
         for n in self.nodes:
             visited[n] = False

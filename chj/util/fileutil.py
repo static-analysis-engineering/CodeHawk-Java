@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -139,7 +140,7 @@ class CHJLibSumIndexLocationNotSetError(CHJError):
 
 class CHJLibSumIndexLocationNotFoundError(CHJError):
 
-    def __init__(self, platform: str) -> None:
+    def __init__(self, platform: Optional[str]) -> None:
         CHJError.__init__(self,'Index file for library summaries not found')
         self.platform = platform
 
@@ -170,7 +171,7 @@ class CHJLibrarySummaryJarNotFoundError(CHJFileNotFoundError):
 
 class CHJLibSumIndexFileNotFoundError(CHJFileNotFoundError):
 
-    def __init__(self,platform: str, filename: str) -> None:
+    def __init__(self, platform: Optional[str], filename: str) -> None:
         CHJFileNotFoundError.__init__(self,filename)
         self.platform = platform
 
@@ -835,7 +836,7 @@ def get_jdksummaries_filename(platform: Optional[str]) -> str:
     else:
         raise CHJJDKSummariesFileNotFoundError(platform, jdkfilename)
 
-def get_libsum_index(platform: Optional[str]) -> Tuple[str, Dict[str, Any]]:
+def get_libsum_index(platform: Optional[str]) -> Tuple[Optional[str], Dict[str, Any]]:
     if platform is None:
         filename = config.libsumindex
         path = None
@@ -920,16 +921,23 @@ def get_engagement_help_message() -> str:
 def getcanonicalappdata() -> Dict[str, Any]:
     appdata = {}
     datadir = config.appdatadir
-    cappfile = os.path.join(os.path.join(datadir,'Canonical'),'applications.json')
-    with open(cappfile) as fp:
-        appdata = json.load(fp)
-    return appdata['apps']
+    if datadir is not None:
+        cappfile = os.path.join(os.path.join(datadir,'Canonical'),'applications.json')
+        with open(cappfile) as fp:
+            appdata = json.load(fp)
+        return appdata['apps']
+    else:
+        print('*' * 80)
+        print('appdata directory is not set! Please set it in your config file.')
+        print('*' * 80)
+        exit(1)
+
     
 def getcanonicalapp(name: str) -> Tuple[str, List[str], str]:
     appdata = getcanonicalappdata()
-    if not appdata is None and name in appdata:
-        canonicaldir = config.canonicaldir
-        path = os.path.join(os.path.join(canonicaldir,name),'challenge_program')
+    canonicaldir = config.canonicaldir
+    if not appdata is None and name in appdata and canonicaldir is not None:
+        path = os.path.join(os.path.join(canonicaldir, name),'challenge_program')
         jars = appdata[name]['jars']
         resource = appdata[name]['resource']
         return (path,jars,resource)

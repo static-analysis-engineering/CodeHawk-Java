@@ -34,14 +34,14 @@ if TYPE_CHECKING:
 
 class CostBound():
 
-    def __init__(self, costmodel: "CostModel", xnode: "ET.Element"):
+    def __init__(self, costmodel, xnode):
         self.costmodel = costmodel       # CostModel
         self.jd = self.costmodel.jd      # DataDictionary
         self.xnode = xnode          # bounds node with bound node children
-        self.terms: List[JT.JTermBase] = []
+        self.terms = []
         self._initialize()
 
-    def is_value(self) -> bool:
+    def is_value(self):
         return (any(x.is_value() for x in self.terms))
 
     def get_value(self):
@@ -49,22 +49,22 @@ class CostBound():
             for t in self.terms:
                 if t.is_value(): return t.get_value()
 
-    def is_symbolic_bound(self) -> bool:
+    def is_symbolic_bound(self):
         return (any(x.is_symbolic_value() for x in self.terms))
 
-    def get_symbolic_bound(self) -> Optional["JT.JTermBase"]:
+    def get_symbolic_bound(self):
         if self.is_symbolic_bound():
             for t in self.terms:
                 if t.is_symbolic_value(): return t
 
-    def is_top(self) -> bool:
+    def is_top(self):
         return len(self.terms) == 0
 
-    def __str__(self) -> str:
+    def __str__(self):
         if self.is_top(): return 'T'
         return '; '.join(str(t) for t in self.terms)
 
-    def _initialize(self) -> None:
+    def _initialize(self):
         bounds = self.xnode.findall('bound')
         if bounds is None or len(bounds) == 0: return
         for b in bounds:

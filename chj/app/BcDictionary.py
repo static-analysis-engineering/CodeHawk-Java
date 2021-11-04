@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021 Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,10 +27,15 @@
 # ------------------------------------------------------------------------------
 
 import chj.util.IndexedTable as IT
+import chj.util.fileutil as UF
 
 import chj.app.Bytecode as BC
 
-from typing import Any, List, Optional, TYPE_CHECKING
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, TYPE_CHECKING
+
+from chj.util.IndexedTable import (
+    IndexedTableValue
+)
 
 if TYPE_CHECKING:
     from chj.index.AppAccess import AppAccess
@@ -37,7 +43,10 @@ if TYPE_CHECKING:
     from chj.app.JavaClass import JavaClass
     import xml.etree.ElementTree as ET
 
-opcode_constructors = {
+opcode_constructors: Dict[
+    str,
+    Callable[[Tuple["BcDictionary", int, List[str], List[int]]], BC.BcBase]
+] = {
     'ld': lambda x: BC.BcLoad(*x),
     'st': lambda x: BC.BcStore(*x),
     'inc': lambda x: BC.BcIInc(*x),
@@ -102,11 +111,11 @@ class BcDictionary(object):
             xnode: "ET.Element"):
         self.jclass = jclass                          # JavaClass
         self.jd: "DataDictionary" = jclass.jd         # DataDictionary
-        self.pc_list_table = IT.IndexedTable('pc-list-table')
-        self.slot_table = IT.IndexedTable('slot-table')
-        self.slot_list_table = IT.IndexedTable('slot-list-table')
-        self.opcode_table = IT.IndexedTable('opcode-table')
-        self.tables = [
+        self.pc_list_table: IT.IndexedTable[BC.BcPcList] = IT.IndexedTable('pc-list-table')
+        self.slot_table: IT.IndexedTable[BC.BcSlot] = IT.IndexedTable('slot-table')
+        self.slot_list_table: IT.IndexedTable[BC.BcSlotList] = IT.IndexedTable('slot-list-table')
+        self.opcode_table: IT.IndexedTable[BC.BcBase] = IT.IndexedTable('opcode-table')
+        self.tables: List[Tuple[IT.IndexedTableSuperclass, Callable[[ET.Element], None]]] = [
             (self.pc_list_table, self._read_xml_pc_list_table),
             (self.slot_table, self._read_xml_slot_table),
             (self.slot_list_table, self._read_xml_slot_list_table),
@@ -127,7 +136,7 @@ class BcDictionary(object):
             r.write_xml(n)
         for (t,_) in self.tables:
             tnode = ET.Element(t.name)
-            t.write_xml(tnode,f)
+            cast(IT.IndexedTable[IndexedTableValue], t).write_xml(tnode,f)
             node.append(tnode)
 
     def __str__(self) -> str:
@@ -143,7 +152,7 @@ class BcDictionary(object):
         if xnode is None: return
         for (t,f) in self.tables:
             t.reset()
-            f(xnode.find(t.name))
+            f(UF.safe_find(xnode, t.name, t.name + ' missing from xml'))
 
     def _read_xml_pc_list_table(self, txnode: "ET.Element") -> None:
         def get_value(node : "ET.Element") -> BC.BcPcList:

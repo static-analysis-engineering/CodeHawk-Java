@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2017-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,14 +30,15 @@ import xml.etree.ElementTree as ET
 
 import chj.util.fileutil as UF
 
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
 
 class IndexedTableError(Exception):
 
     def __init__(self, msg: str) -> None:
         self.msg = msg
 
-    def __str__(self) -> str: return self.msg
+    def __str__(self) -> str: 
+        return self.msg
 
 def get_rep(node: ET.Element) -> Tuple[int, List[str], List[int]]:
     tags = node.get('t')
@@ -61,7 +63,26 @@ def get_rep(node: ET.Element) -> Tuple[int, List[str], List[int]]:
 def get_key(tags: List[str], args: List[int]) -> Tuple[str, str]: 
     return (','.join(tags), ','.join([str(x) for x in args]))
 
-class IndexedTable (object):
+class IndexedTableValue(object):
+    def __init__(self, index: int) -> None:
+        self.index = index
+
+    def get_key(self) -> Tuple[str, str]:
+        raise NotImplementedError("get_key not overridden")
+
+class IndexedTableSuperclass:
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def size(self) -> int:
+        raise NotImplementedError("size not overridden")
+
+    def reset(self) -> None:
+        raise NotImplementedError("reset not overridden")
+
+V = TypeVar("V", bound=IndexedTableValue)
+
+class IndexedTable(Generic[V], IndexedTableSuperclass):
     '''Table to provide unique indices to objects represented by a key string.
 
     The table can be checkpointed and reset to that checkpoint with
@@ -73,9 +94,9 @@ class IndexedTable (object):
     '''
 
     def __init__(self, name: str) -> None:
-        self.name = name
-        self.keytable: Dict[Tuple[str, str], int] = {}              # key -> index
-        self.indextable: Dict[int, object] = {}            # index -> object
+        IndexedTableSuperclass.__init__(self, name)
+        self.keytable: Dict[Tuple[str, str], int] = {}  # key -> index
+        self.indextable: Dict[int, V] = {}              # index -> object
         self.next = 1
         self.reserved: List[int] = []
         self.checkpoint: Optional[int] = None
@@ -94,8 +115,9 @@ class IndexedTable (object):
         raise IndexedTableError("Checkpoint has already been set at "
                                        + str(self.checkpoint))
 
-    def iter(self, f: Callable[[int, object], None]) -> None:
-        for (i,v) in self.indextable.items(): f(i,v)
+    def iter(self, f: Callable[[int, V], None]) -> None:
+        for (i,v) in self.indextable.items(): 
+            f(i,v)
 
     def reset_to_checkpoint(self) -> int:
         '''Remove all entries added since the checkpoint was set.'''
@@ -114,9 +136,10 @@ class IndexedTable (object):
         self.next = cp
         return cp
 
-    def remove_checkpoint(self) -> None: self.checkpoint = None
+    def remove_checkpoint(self) -> None:
+        self.checkpoint = None
 
-    def add(self, key: Tuple[str, str], f: Callable[[int, Tuple[str, str]], object]) -> int:
+    def add(self, key: Tuple[str, str], f: Callable[[int, Tuple[str, str]], V]) -> int:
         if key in self.keytable:
             return self.keytable[key]
         else:
@@ -141,19 +164,19 @@ class IndexedTable (object):
         self.next += 1
         return index
 
-    def values(self) -> List[object]:
+    def values(self) -> List[V]:
         result = []
         for i in sorted(self.indextable):
             result.append(self.indextable[i])
         return result
 
-    def items(self) -> List[Tuple[int, object]]:
-        result = []
+    def items(self) -> List[Tuple[int, V]]:
+        result: List[Tuple[int, V]] = []
         for i in sorted(self.indextable):
             result.append((i,self.indextable[i]))
         return result
 
-    def commit_reserved(self, index: int, key: Tuple[str, str], obj: object) -> None:
+    def commit_reserved(self, index: int, key: Tuple[str, str], obj: V) -> None:
         if index in self.reserved:
             self.keytable[key] = index
             self.indextable[index] = obj
@@ -161,9 +184,10 @@ class IndexedTable (object):
         else:
             raise IndexedTableError("Trying to commit nonexisting index: " + str(index))
 
-    def size(self) -> int: return (self.next - 1)
+    def size(self) -> int:
+        return (self.next - 1)
 
-    def retrieve(self, index: int) -> Any:
+    def retrieve(self, index: int) -> V:
         if index in self.indextable:
             return self.indextable[index]
         else:
@@ -171,16 +195,18 @@ class IndexedTable (object):
                       + ' (size: ' + str(self.size()) + ')')
             raise IndexedTableError(msg + '\n' + self.name + ', size: ' + str(self.size()))
 
-    def retrieve_by_key(self, f: Callable[[Tuple[str, str]], bool]) -> List[Tuple[Tuple[str, str], object]]:
-        result = []
+    def retrieve_by_key(
+        self, f: Callable[[Tuple[str, str]], bool]
+    ) -> List[Tuple[Tuple[str, str], V]]:
+        result: List[Tuple[Tuple[str, str], V]] = []
         for key in self.keytable:
             if f(key):
-                result.append((key,self.indextable[self.keytable[key]]))
+                result.append((key, self.indextable[self.keytable[key]]))
         return result
 
     def write_xml(self,
             node: ET.Element,
-            f: Callable[[ET.Element, Any],None],
+            f: Callable[[ET.Element, V], None],
             tag: str='n') -> None:
         for key in sorted(self.indextable):
             snode = ET.Element(tag)
@@ -190,9 +216,9 @@ class IndexedTable (object):
     def read_xml(self,
             node: Optional[ET.Element],
             tag: str,
-            get_value: Callable[[ET.Element], Any],
-            get_key: Callable[[Any], Tuple[str, str]]= lambda x:x.get_key(),
-            get_index: Callable[[Any], int]= lambda x:x.index) -> None:
+            get_value: Callable[[ET.Element], V],
+            get_key: Callable[[V], Tuple[str, str]]= lambda x:x.get_key(),
+            get_index: Callable[[V], int]= lambda x:x.index) -> None:
         if node is None:
             print('Xml node not present in ' + self.name)
             raise IndexedTableError(self.name)

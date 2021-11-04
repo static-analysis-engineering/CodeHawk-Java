@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -34,33 +35,18 @@ from chj.app.Loop import Loop
 from chj.app.MethodInvs import MethodInvs
 from chj.app.Vartable import Vartable
 
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import KeysView, ValuesView
     from chj.app.JavaClass import JavaClass
     from chj.app.Cfg import BBlock
     from chj.index.Classname import Classname
+    from chj.index.CallgraphDictionary import CallgraphTargetBase
     from chj.index.DataDictionary import DataDictionary
     from chj.index.FieldSignature import FieldSignature
     import xml.etree.ElementTree as ET
     import chj.index.Taint as T
-
-    TAINT_NODE_TYPES = Union[T.FieldTaintNode,
-                    T.VariableTaintNode,
-                    T.VariableEqTaintNode,
-                    T.CallTaintNode,
-                    T.UnknownCallTaintNode,
-                    T.ObjectFieldTaintNode,
-                    T.ConditionalTaintNode,
-                    T.SizeTaintNode,
-                    T.RefEqualTaintNode]
-
-    TORIGIN_CONSTRUCTOR_TYPE = Union[T.VariableTaint,
-                            T.FieldTaint,
-                            T.CallerTaint,
-                            T.TopTargetTaint,
-                            T.StubTaint]
 
 class JavaMethod(object):
     """Analysis results for a method.
@@ -81,7 +67,7 @@ class JavaMethod(object):
         self.xnode = xnode                                      # class file xnode
         self.access = xnode.get('access')
         self.loops: Dict[int, Loop] = {}                        # first-pc -> Loop
-        self.cfg: Optional[Cfg] = None                          # Cfg
+        self.cfg: Cfg                                           # Cfg
         self.instructions: Dict[int, Instruction] = {}          # pc -> Instruction
         self.exceptiontable: Optional[ExceptionTable] = None    # ExceptionTable
         self.variabletable: Optional[Vartable] = None
@@ -140,7 +126,7 @@ class JavaMethod(object):
         self._read_method_invariants()
         return self.invariants
 
-    def get_cfg(self) -> Optional[Cfg]:
+    def get_cfg(self) -> Cfg:
         self._read_method_bytecode()
         return self.cfg
 
@@ -166,13 +152,14 @@ class JavaMethod(object):
         self._read_method_bytecode()
         for pc in self.instructions: f(pc,self.instructions[pc])
 
-    def get_next_pc(self, pc: int) -> int:
+    def get_next_pc(self, pc: int) -> Optional[int]:
         pcs = self.get_pcs()
         index = pcs.index(pc)
         if index < len(pcs) - 1:
             return pcs[index + 1]
+        return None
 
-    def get_slot_src_value(self, pc: int):
+    def get_slot_src_value(self, pc):
         if pc == -1: return 'exn object'
         return self.get_instruction(pc).get_result_value()
 
@@ -196,7 +183,7 @@ class JavaMethod(object):
         else:
             raise UF.CHJError(str(self) + ' has no loop at pc: ' + str(pc))
 
-    def count_recursive_calls(self) -> int:
+    def count_recursive_calls(self):
         recursive_calls_count = 0
         for i in self.get_instructions():
             if i.is_call():
@@ -306,7 +293,8 @@ class JavaMethod(object):
         def f(pc: int, i: Instruction) -> None:
             if i.is_call():
                 if i.has_targets():
-                    if classname in [ str(s) for s in i.tgts.get_class_names() ]:
+                    tgts = cast("CallgraphTargetBase", i.tgts) 
+                    if classname in [ str(s) for s in tgts.get_class_names() ]:
                         results.append((pc,i))
         self.iter_instructions(f)
         return results
@@ -370,17 +358,19 @@ class JavaMethod(object):
             for i in inode.findall('instr'):
                 pc = UF.safe_get(i, 'pc', 'pc missing from xml for instruction in method ' + self.get_qname(), int)
                 xiopc = UF.safe_get(i, 'iopc', 'iopc missing from xml for ' + self.get_qname(), int)
-                iopc = self.jclass.bcd.get_opcode(xiopc)
-                xissdl = UF.safe_get(i, 'issdl', 'issdl missing from xml for ' + self.get_qname(), int)
-                exprstack = self.jclass.bcd.get_slots(xissdl)
-                if 'itgt' in i.attrib:
-                    tgts = self.jd.cgd.read_xml_target(i)
-                elif self.jd.has_call_target(self.cmsix,pc):
-                    (_,tgts) = self.jd.get_call_target(self.cmsix,pc)
-                else:
-                    tgts = None
-                instr = Instruction(self,pc,iopc,exprstack,tgts)
-                self.instructions[pc] = instr
+                if self.jclass.bcd is not None:
+                    iopc = self.jclass.bcd.get_opcode(xiopc)
+                    xissdl = UF.safe_get(i, 'issdl', 'issdl missing from xml for ' + self.get_qname(), int)
+                    exprstack = self.jclass.bcd.get_slots(xissdl)
+                    tgts: Optional["CallgraphTargetBase"] = None
+                    if 'itgt' in i.attrib:
+                        tgts = self.jd.cgd.read_xml_target(i)
+                    elif self.jd.has_call_target(self.cmsix,pc):
+                        (_,tgts) = self.jd.get_call_target(self.cmsix,pc)
+                    else:
+                        tgts = None
+                    instr = Instruction(self,pc,iopc,exprstack,tgts)
+                    self.instructions[pc] = instr
         
         vtnode = bcxnode.find('variable-table')
         if not vtnode is None:
@@ -389,6 +379,8 @@ class JavaMethod(object):
         cfgnode = bcxnode.find('cfg')
         if not cfgnode is None:
             self.cfg = Cfg(self,cfgnode)
+        else:
+            raise UF.CHJError('CFG missing from xml for ' + self.get_qname())
 
         exnode = bcxnode.find('exception-handlers')
         if not exnode is None and (len(exnode.findall('handler')) > 0):

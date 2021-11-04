@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -35,12 +36,6 @@ import chj.util.printutil as UP
 
 import chj.index.Taint as T
 
-TORIGIN_CONSTRUCTOR_TYPE = Union[T.VariableTaint,
-                            T.FieldTaint,
-                            T.CallerTaint,
-                            T.TopTargetTaint,
-                            T.StubTaint]
-
 class TaintOrigins():
 
     def __init__(self,app: "AppAccess"):
@@ -49,7 +44,7 @@ class TaintOrigins():
 
     def as_dictionary(self) -> Dict[str, str]:
         results = {}
-        def f(origin: TORIGIN_CONSTRUCTOR_TYPE) -> None:
+        def f(origin: T.TaintBase) -> None:
             results[str(origin.index)] = str(origin)
         self.jd.iter_taint_origins(f)
         return results
@@ -59,8 +54,8 @@ class TaintOrigins():
         headerline = ''.join([UP.cjust(str(t[0]),8) for t in header]) + ' taint origin site'
         result = []
         lines= []
-        def f(origin: TORIGIN_CONSTRUCTOR_TYPE) -> None:
-            if source is None or source in str(origin):
+        def f(origin: T.TaintBase) -> None:
+            if (source is None) or (source in str(origin)):
                 result.append(str(origin.index).rjust(6) + '  ' + str(origin))
         self.jd.iter_taint_origins(f)
         lines.append(headerline)

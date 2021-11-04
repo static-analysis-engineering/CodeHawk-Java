@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -118,8 +119,8 @@ class UserDataClass(object):
         ccnode = mnode.find('callees')
         bbnode = mnode.find('bounds')
         mcnode = mnode.find('method-cost')
+        errormsg = ' missing from xml for UserDataMethod: ' + self.name
         if not mcnode is None:
-            errormsg = ' missing from xml for UserDataMethod: ' + self.name
             mcost = []
             if 'iconst' in mcnode.attrib:
                 mcost.append(('iconst', UF.safe_get(mcnode, 'iconst', 'iconst' + errormsg, int)))

@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +34,8 @@ if TYPE_CHECKING:
     from chj.index.DataDictionary import DataDictionary
     from chj.index.MethodSignature import ClassMethodSignature
     from chj.cost.CostModel import CostModel
+    from chj.cost.CostMeasure import CostMeasure
+    from chj.cost.MethodCost import MethodCost
 
 abbreviations = [
     ('com.cyberpointllc.stac.easydecision', 'ccse'),
@@ -177,7 +180,7 @@ class CostSummary(object):
         lines.append(self.get_ranked_range_cost_string())
 
         if allcosts:
-            symbolicdeps = {}
+            symbolicdeps: Dict[int, int] = {}
             multipledeps: Dict[str, int] = {}
             symboliccosts = self.costmodel.get_symbolic_method_costs()
             lines.append('\n\nSymbolic cost expressions: ' + str(len(symboliccosts)))
@@ -197,7 +200,7 @@ class CostSummary(object):
                             if not cmsix in symbolicdeps: symbolicdeps[cmsix] = 0
                             symbolicdeps[cmsix] += 1
                             symbolicname = str(self.jd.get_cms(cmsix))
-                            symboliccost = str(self.costmodel.get_method_cost(cmsix))
+                            #symboliccost = str(self.costmodel.get_method_cost(cmsix))
                         elif len(depsname) > 2 and not 'lc' in depsname and 'pc' in depsname:
                             jname = '_'.join(j.get_name().split('_')[:-2])
                             multipledeps.setdefault(jname,0)
@@ -252,9 +255,9 @@ class CostSummary(object):
         return '\n'.join(lines)
 
     def to_loop_bounds_string(self) -> str:
-        result = {}
+        result: Dict[int, Dict[int, Tuple["CostMeasure", "CostMeasure"]]] = {}
         lines = []
-        def f(mc):
+        def f(mc: "MethodCost") -> None:
             loopcosts = mc.get_loop_costs()
             if len(loopcosts) > 0:
                 for l in loopcosts:
