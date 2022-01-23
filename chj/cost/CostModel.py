@@ -33,7 +33,7 @@ import chj.util.xmlutil as UX
 
 from chj.cost.MethodCost import MethodCost
 
-from typing import Callable, Dict, List, Mapping, Tuple, Union, TYPE_CHECKING
+from typing import Callable, cast, Dict, List, Mapping, Tuple, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chj.cost.CostMeasure import CostMeasure
@@ -96,7 +96,8 @@ class CostModel():
         for cmsix in self.methodcosts:
             if (self.methodcosts[cmsix].methodcost.is_range()
                     and not self.methodcosts[cmsix].methodcost.is_value()):
-                result.append((cmsix,self.methodcosts[cmsix].methodcost.get_range()))
+                range = cast(Tuple[int, int], self.methodcosts[cmsix].methodcost.get_range())     #enforced by previous is_range() call
+                result.append((cmsix, range))
         result = sorted(result,key=lambda x:x[1][1])
         return result
 

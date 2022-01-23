@@ -159,10 +159,6 @@ class JavaMethod(object):
             return pcs[index + 1]
         return None
 
-    def get_slot_src_value(self, pc):
-        if pc == -1: return 'exn object'
-        return self.get_instruction(pc).get_result_value()
-
     def get_variable_name(self, name: str, pc: int) -> str:
         self._read_method_bytecode()
         if self.variabletable is None: return name
@@ -182,15 +178,6 @@ class JavaMethod(object):
             return self.loops[pc]
         else:
             raise UF.CHJError(str(self) + ' has no loop at pc: ' + str(pc))
-
-    def count_recursive_calls(self):
-        recursive_calls_count = 0
-        for i in self.get_instructions():
-            if i.is_call():
-                if (self.get_qname() == i.getcallee()
-                        and self.get_method_signature_string() == i.jmethod.get_method_signature_string()):
-                    recursive_calls_count += 1
-        return recursive_calls_count
 
     def has_calls(self) -> bool:
         return any(i.is_call() for i in self.get_instructions())

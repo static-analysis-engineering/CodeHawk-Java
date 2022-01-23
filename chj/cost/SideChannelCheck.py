@@ -146,8 +146,8 @@ class SideChannelCheck:
             for pp in pathsthroughp:
                 lines.append('  ' + str(pp))
                 conds = self.get_conditions_in_path(pp[1:])
-                for (pc,c) in conds:
-                    lines.append('    ' + str(pc) + ': ' + str(c))
+                for (pc,d) in conds:
+                    lines.append('    ' + str(pc) + ': ' + str(d))
                     
         return '\n'.join(lines)
 

@@ -29,7 +29,7 @@
 import chj.util.IndexedTable as IT
 import chj.util.fileutil as UF
 
-import chj.index.JDictionaryRecord as JD
+import chj.index.CallgraphDictionaryRecord as CGD
 
 from typing import Any, Callable, Dict, List, Tuple, Union, TYPE_CHECKING
 
@@ -38,14 +38,14 @@ if TYPE_CHECKING:
     from chj.index.DataDictionary import DataDictionary
     import xml.etree.ElementTree as ET
 
-class CallgraphTargetBase(JD.JDictionaryRecord):
+class CallgraphTargetBase(CGD.CallgraphDictionaryRecord):
 
     def __init__(self,
             cgd: "CallgraphDictionary",
             index: int,
             tags: List[str],
             args: List[int]):
-        JD.JDictionaryRecord.__init__(self,index,tags,args)
+        CGD.CallgraphDictionaryRecord.__init__(self,cgd,index,tags,args)
         self.cgd = cgd
         self.cnixs: List[int] = []
 
@@ -63,6 +63,8 @@ class CallgraphTargetBase(JD.JDictionaryRecord):
 
     def __str__(self) -> str: return 'jdcgtargetbase'
 
+
+@CGD.callgraph_dictionary_record_tag("nv")
 class NonVirtualTarget(CallgraphTargetBase):
 
     def __init__(self,
@@ -90,6 +92,7 @@ class NonVirtualTarget(CallgraphTargetBase):
     def __str__(self) -> str: return 'nv:' + str(str(self.classname))
 
 
+@CGD.callgraph_dictionary_record_tag("cv")
 class ConstrainedVirtualTargets(CallgraphTargetBase):
 
     def __init__(self,
@@ -118,6 +121,7 @@ class ConstrainedVirtualTargets(CallgraphTargetBase):
     def __str__(self) -> str: return 'cv:' + '; '.join(self.get_class_names()) + ' (' + str(self.get_tag()) + ')'
 
 
+@CGD.callgraph_dictionary_record_tag("v")
 class VirtualTargets(CallgraphTargetBase):
 
     def __init__(self,
@@ -141,6 +145,7 @@ class VirtualTargets(CallgraphTargetBase):
     def __str__(self) -> str: return 'v:' + ';'.join(self.get_class_names())
 
 
+@CGD.callgraph_dictionary_record_tag("empty")
 class EmptyTarget(CallgraphTargetBase):
 
     def __init__(self,
@@ -168,16 +173,6 @@ class EmptyTarget(CallgraphTargetBase):
     def __str__(self) -> str:
         return 'empty:' + str(self.get_class_name()) + str(self.get_method_signature())
                                   
-method_target_constructors: Dict[
-    str,
-    Callable[[Tuple["CallgraphDictionary", int, List[str], List[int]]], "CallgraphTargetBase"]
-] = {
-    'nv': lambda x: NonVirtualTarget(*x),
-    'cv': lambda x: ConstrainedVirtualTargets(*x),
-    'v':  lambda x: VirtualTargets(*x),
-    'empty': lambda x: EmptyTarget(*x)
-    }
-
 class CallgraphDictionary(object):
 
     def __init__(self,
@@ -220,9 +215,6 @@ class CallgraphDictionary(object):
 
     def _read_xml_target_table(self, txnode: "ET.Element") -> None:
         def get_value(node: "ET.Element") -> "CallgraphTargetBase":
-            rep = IT.get_rep(node)
-            tag = rep[1][0]
-            args = (self,) + rep
-            return method_target_constructors[tag](args)
+            return CGD.construct_callgraph_dictionary_record(*((self,) + IT.get_rep(node)), CallgraphTargetBase)
         self.target_table.read_xml(txnode,'n',get_value)
         

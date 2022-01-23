@@ -26,7 +26,7 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-import chj.index.JDictionaryRecord as JD
+import chj.index.TaintDictionaryRecord as TD
 
 from typing import List, Optional, Union, TYPE_CHECKING
 
@@ -35,20 +35,14 @@ if TYPE_CHECKING:
     from chj.index.MethodSignature import ClassMethodSignature
     from chj.index.TaintDictionary import TaintDictionary
 
-    TORIGIN_CONSTRUCTOR_TYPE = Union[VariableTaint,
-                                    FieldTaint,
-                                    CallerTaint,
-                                    TopTargetTaint,
-                                    StubTaint]
-
-class TaintBase(JD.JDictionaryRecord):
+class TaintBase(TD.TaintDictionaryRecord):
 
     def __init__(self,
             ttd: "TaintDictionary",
             index: int,
             tags: List[str],
             args: List[int]):
-        JD.JDictionaryRecord.__init__(self,index,tags,args)
+        TD.TaintDictionaryRecord.__init__(self,ttd,index,tags,args)
         self.ttd = ttd
 
     def __str__(self) -> str: return 'jdtaintbase'
@@ -151,7 +145,7 @@ class TMethodTarget(TaintBase):
         else:
             return '\n'.join([ ('    ' + str(m)) for m in self.get_targets() ])
 
-
+@TD.t_dictionary_record_tag("v")
 class VariableTaint(TaintBase):
 
     def __init__(self,
@@ -171,6 +165,7 @@ class VariableTaint(TaintBase):
         return 'VAR:' + str(self.get_caller())  + ':' + str(self.get_variable())
 
 
+@TD.t_dictionary_record_tag("f")
 class FieldTaint(TaintBase):
 
     def __init__(self,
@@ -195,7 +190,7 @@ class FieldTaint(TaintBase):
         return ('FIELD: ' + str(self.get_caller()) + ' @ ' + str(self.get_pc()) + ' -- '
                     + str(self.get_field()) + ',' + str(self.get_name()))
 
-
+@TD.t_dictionary_record_tag("c")
 class CallerTaint(TaintBase):
 
     def __init__(self,
@@ -220,6 +215,7 @@ class CallerTaint(TaintBase):
                     + str(self.get_caller()) + ' @ ' + str(self.get_pc()))
 
 
+@TD.t_dictionary_record_tag("t")
 class TopTargetTaint(TaintBase):
 
     def __init__(self,
@@ -242,6 +238,7 @@ class TopTargetTaint(TaintBase):
                     + ' -- ' + str(self.get_method_target()))
 
 
+@TD.t_dictionary_record_tag("s")
 class StubTaint(TaintBase):
 
     def __init__(self,
@@ -330,6 +327,7 @@ class TaintNodeBase(TaintBase):
     def dotlabel(self) -> str: return 'dot-label'
 
 
+@TD.t_dictionary_record_tag("f")
 class FieldTaintNode(TaintNodeBase):
 
     def __init__(self,
@@ -346,6 +344,7 @@ class FieldTaintNode(TaintNodeBase):
     def __str__(self) -> str: return ('FIELD(' + str(self.get_field()) + ')')
 
 
+@TD.t_dictionary_record_tag("v")
 class VariableTaintNode(TaintNodeBase):
 
     def __init__(self,
@@ -374,6 +373,7 @@ class VariableTaintNode(TaintNodeBase):
         + str(self.get_variable()) + ' @' + str(self.get_pc()) + ')')
 
 
+@TD.t_dictionary_record_tag("q")
 class VariableEqTaintNode(TaintNodeBase):
 
     def __init__(self,
@@ -401,6 +401,7 @@ class VariableEqTaintNode(TaintNodeBase):
                     + ',' + str(self.get_variable2()) + ')')
 
 
+@TD.t_dictionary_record_tag("c")
 class CallTaintNode(TaintNodeBase):
 
     def __init__(self,
@@ -430,6 +431,7 @@ class CallTaintNode(TaintNodeBase):
         return 'CALL(' + str(self.get_caller()) + ' -> ' + str(self.get_callee()) + ')'
 
 
+@TD.t_dictionary_record_tag("u")
 class UnknownCallTaintNode(TaintNodeBase):
 
     def __init__(self,
@@ -451,6 +453,7 @@ class UnknownCallTaintNode(TaintNodeBase):
         return 'UNKNOWN_CALL(' + str(self.get_caller()) + ' @pc: ' + str(self.get_pc()) + ')'
         
 
+@TD.t_dictionary_record_tag("o")
 class ObjectFieldTaintNode(TaintNodeBase):
 
     def __init__(self,
@@ -477,6 +480,7 @@ class ObjectFieldTaintNode(TaintNodeBase):
                     '@pc:' + str(self.get_pc()))
 
 
+@TD.t_dictionary_record_tag("j")
 class ConditionalTaintNode(TaintNodeBase):
 
     def __init__(self,
@@ -500,6 +504,7 @@ class ConditionalTaintNode(TaintNodeBase):
         return ('CONDITIONAL(' + str(self.get_caller()) + '@pc' + str(self.get_pc()))
 
 
+@TD.t_dictionary_record_tag("s")
 class SizeTaintNode(TaintNodeBase):
 
     def __init__(self,
@@ -526,6 +531,7 @@ class SizeTaintNode(TaintNodeBase):
                     + '@pc' + str(self.get_pc()))
 
 
+@TD.t_dictionary_record_tag("r")
 class RefEqualTaintNode(TaintNodeBase):
 
     def __init__(self,

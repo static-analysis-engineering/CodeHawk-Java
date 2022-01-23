@@ -27,12 +27,15 @@
 # ------------------------------------------------------------------------------
 
 from chj.index.JType import JavaTypesBase
+import chj.util.fileutil as UF
 
-from typing import Any, List, TYPE_CHECKING
+from typing import cast, Any, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chj.index.Classname import Classname
     from chj.index.JTypeDictionary import JTypeDictionary
+    from chj.index.JObjectTypes import JObjectTypeBase
+    import chj.index.JValueTypes as JVT
 
 class FieldSignature(JavaTypesBase):
 
@@ -43,19 +46,22 @@ class FieldSignature(JavaTypesBase):
             args: List[int]):
         JavaTypesBase.__init__(self,tpd,index,tags,args)
 
-    def get_type(self) -> Any: return self.tpd.get_value_type(int(self.args[1]))
+    def get_type(self) -> "JVT.JValueTypeBase": return self.tpd.get_value_type(int(self.args[1]))
 
     def get_name(self) -> str: return str(self.tpd.get_string(self.args[0]))
 
-    def get_scalar_size(self) -> int: return self.get_type().get_scalar_size()
+    def get_scalar_size(self) -> int: 
+        return self.get_type().get_scalar_size()    #cast enforcd by call to is_scalar
 
-    def get_object_type(self) -> Any:
+    def get_object_type(self) -> "JObjectTypeBase":
         if self.is_object():
-            return self.get_type().get_object_type()
+            return cast("JVT.ObjectValueType", self.get_type()).get_object_type()   #cast enforced by call to is_object
+        else:
+            raise UF.CHJError(str(self) + ' does not have an object type')
 
-    def is_scalar(self) -> bool: return self.get_type().is_scalar()
+    def is_scalara(self) -> bool: return self.get_type().is_scalar()
 
-    def is_array(self) -> bool: return self.get_type().is_array()
+    def is_array(self) -> bool: return self.get_type().is_array_type()
 
     def is_object(self) -> bool: return self.get_type().is_object()
 

@@ -26,7 +26,7 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-from typing import Callable, cast, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chj.index.DataDictionary import DataDictionary
@@ -35,28 +35,9 @@ import chj.util.IndexedTable as IT
 import chj.util.fileutil as UF
 
 import chj.index.JTerm as JT
+import chj.index.JTermDictionaryRecord as JTD
 
 import xml.etree.ElementTree as ET
-
-jterm_constructors: Dict[
-    str,
-    Callable[[Tuple["JTermDictionary", int, List[str], List[int]]], JT.JTermBase]   
-] = {
-    'xv': lambda x:JT.JTAuxiliaryVar(*x),
-    'lv': lambda x:JT.JTLocalVar(*x),
-    'lc': lambda x:JT.JTLoopCounter(*x),
-    'c' : lambda x:JT.JTConstant(*x),
-    'sf': lambda x:JT.JTStaticFieldValue(*x),
-    'of': lambda x:JT.JTObjectFieldValue(*x),
-    'bc': lambda x:JT.JTBoolConstant(*x),
-    'fc': lambda x:JT.JTFloatConstant(*x),
-    'sc': lambda x:JT.JTermStringConstant(*x),
-    'al': lambda x:JT.JTArrayLength(*x),
-    'sl': lambda x:JT.JTStringLength(*x),
-    'si': lambda x:JT.JTSize(*x),
-    'ar': lambda x:JT.JTArithmeticExpr(*x),
-    'symc': lambda x:JT.JTSymbolicConstant(*x)
-    }
 
 class JTermDictionary(object):
 
@@ -134,35 +115,38 @@ class JTermDictionary(object):
     def mk_float_constant(self, v: float) -> JT.JTFloatConstant:
         return cast(JT.JTFloatConstant, self.get_jterm(self.index_float_constant(v)))
 
-    def index_constant_jterm(self, v):
+    def index_constant_jterm(self, v: int) -> int:
         tags = ['c']
         args = [ self.index_numerical(v) ]
-        def f(index,key): return JT.JTConstant(self,index,tags,args)
+        def f(index: int, key: Tuple[str, str]) -> JT.JTConstant: 
+            return JT.JTConstant(self,index,tags,args)
         return self.jterm_table.add(IT.get_key(tags,args),f)
 
     def mk_constant_jterm(self, v: int) -> JT.JTermBase:
         return self.get_jterm(self.index_constant_jterm(v))
 
-    def index_arithmetic_jterm(self,jt1,jt2,op):
-        tags = ['ar',op]
+    def index_arithmetic_jterm(self, jt1: JT.JTermBase, jt2: JT.JTermBase, op: str) -> int:
+        tags = [ 'ar', op ]
         args = [ jt1.index, jt2.index ]
-        def f(index,key): return JT.JTArithmeticExpr(self,index,tags,args)
+        def f(index: int, key: Tuple[str, str]) -> JT.JTArithmeticExpr: 
+            return JT.JTArithmeticExpr(self,index,tags,args)
         return self.jterm_table.add(IT.get_key(tags,args),f)
 
-    def mk_arithmetic_jterm(self,jt1,jt2,op):
-        return self.get_jterm(self.index_arithmetic_jterm(jt1,jt2,op))
+    def mk_arithmetic_jterm(self, jt1: JT.JTermBase, jt2: JT.JTermBase, op: str) -> JT.JTArithmeticExpr:
+        return cast(JT.JTArithmeticExpr, self.get_jterm(self.index_arithmetic_jterm(jt1,jt2,op)))
 
-    def read_xml_jterm(self,node,tag='ijt'):
-        return self.get_jterm(int(node.get(tag)))
+    def read_xml_jterm(self, node: ET.Element, tag: str='ijt') -> JT.JTermBase:
+        return self.get_jterm(UF.safe_get(node, tag, tag + ' missing from jterm xml', int))
 
-    def read_xml_relational_expr_list(self,node,tag='irel'):
-        return self.get_relational_expr_list(int(node.get(tag)))
+    def read_xml_relational_expr_list(self, node: ET.Element, tag: str='irel') -> JT.JTRelationalExprList:
+        return self.get_relational_expr_list(UF.safe_get(node, tag, tag + 'missing from jterm xml',  int))
 
-    def write_xml(self,node):
-        def f(n,r):r.write_xml(n)
+    def write_xml(self, node: ET.Element) -> None:
+        def f(n: ET.Element, r: Any) -> None:
+            r.write_xml(n)
         for (t,_) in self.tables:
             tnode = ET.Element(t.name)
-            t.write_xml(tnode,f)
+            cast(IT.IndexedTable[IT.IndexedTableValue], t).write_xml(tnode,f)
             node.append(tnode)
 
     def __str__(self) -> str:
@@ -210,10 +194,7 @@ class JTermDictionary(object):
 
     def _read_xml_jterm_table(self, txnode: Optional[ET.Element]) -> None:
         def get_value(node: ET.Element) -> JT.JTermBase:
-            rep = IT.get_rep(node)
-            tag = rep[1][0]
-            args = (self,) + rep
-            return jterm_constructors[tag](args)
+            return JTD.construct_jterm_dictionary_record(*((self,) + IT.get_rep(node)), JT.JTermBase)
         self.jterm_table.read_xml(txnode,'n',get_value)
 
     def _read_xml_relational_expr_table(self, txnode: Optional[ET.Element]) -> None:

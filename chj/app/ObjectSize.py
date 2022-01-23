@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from chj.app.JavaClass import JavaClass
     from chj.index.FieldSignature import FieldSignature
     from chj.index.FieldSignature import ClassFieldSignature
+    from chj.index.JObjectTypes import JObjectTypeBase
 
 class ObjectSize(object):
 
@@ -39,13 +40,13 @@ class ObjectSize(object):
         self.jclass = jclass                        # JavaClass
         self.jd = jclass.jd                         # DataDictionary
         self.scalar = 0
-        self.objects: List[int] = []                # [ cnix ]
+        self.objects: List["JObjectTypeBase"] = []
         self.arrays: List["FieldSignature"] = []    # [ FieldSignature ]
 
     def add_scalar(self, s: int) -> None:
         self.scalar += s
 
-    def add_object(self, cnix: int) -> None:
+    def add_object(self, cnix: "JObjectTypeBase") -> None:
         self.objects.append(cnix)
 
     def add_array(self, arr: "FieldSignature") -> None:
@@ -65,7 +66,7 @@ class ObjectSize(object):
         lines = []
         lines.append('  scalar size: ' + str(self.scalar))
         if len(self.objects) > 0:
-            pObjs = '. '.join([self.jd.get_cn(cnix).get_name() for cnix in self.objects])
+            pObjs = ', '.join([str(x) for x in self.objects])
             lines.append('  objects    : ' + pObjs)
         if len(self.arrays) > 0:
             lines.append('  arrays     : ' + str(len(self.arrays)))

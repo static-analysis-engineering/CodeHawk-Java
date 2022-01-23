@@ -4,7 +4,6 @@
 # ------------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2017-2020 Kestrel Technology LLC
 # Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -30,20 +29,20 @@ import xml.etree.ElementTree as ET
 
 import chj.util.IndexedTable as IT
 
-from typing import Callable, cast, Dict, List, Tuple, Type, TypeVar, Union, TYPE_CHECKING
+from typing import Callable, cast, Dict, List, Tuple, Type, TypeVar, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from chj.index.JTypeDictionary import JTypeDictionary
+    from chj.app.BcDictionary import BcDictionary
 
-class JDictionaryRecord(IT.IndexedTableValue):
+class BcDictionaryRecord(IT.IndexedTableValue):
     """Base class for all objects kept in the JDictionary."""
 
     def __init__(self,
-            tpd: "JTypeDictionary",
+            bcd: "BcDictionary",
             index: int,
             tags: List[str],
             args: List[int]) -> None:
-        self.tpd = tpd
+        self.bcd = bcd
         self.index = index
         self.tags = tags
         self.args = args
@@ -56,23 +55,33 @@ class JDictionaryRecord(IT.IndexedTableValue):
         if len(argstr) > 0: node.set('a',argstr)
         node.set('ix',str(self.index))
 
-__j_dictionary_record_types: Dict[Tuple[type, str], Type[JDictionaryRecord]] = {}
-JDiR = TypeVar('JDiR', bound=JDictionaryRecord, covariant=True)
+__bc_dictionary_record_types: Dict[str, Type[BcDictionaryRecord]] = {}
+bcDiR = TypeVar('bcDiR', bound=BcDictionaryRecord, covariant=True)
 
-def j_dictionary_record_tag(tag_name: str) -> Callable[[Type[JDiR]], Type[JDiR]]:
-    def handler(t: Type[JDiR]) -> Type[JDiR]:
-        __j_dictionary_record_types[(t.__bases__[0], tag_name)] = t
+def bc_dictionary_record_tag(tag_name: str) -> Callable[[Type[bcDiR]], Type[bcDiR]]:
+    def handler(t: Type[bcDiR]) -> Type[bcDiR]:
+        __bc_dictionary_record_types[(tag_name)] = t
         return t
     return handler
 
-def construct_j_dictionary_record(
-    tpd: "JTypeDictionary",
+def construct_bytecode_dictionary_record(
+    bcd: "BcDictionary",
     index: int,
     tags: List[str],
     args: List[int],
-    superclass: Type[JDiR]
-) -> JDiR:
-    if (superclass, tags[0]) not in __j_dictionary_record_types:
+) -> bcDiR:
+    if tags[0] not in __bc_dictionary_record_types:
         raise Exception("unknown type: " + tags[0])
-    instance = __j_dictionary_record_types[(superclass, tags[0])](tpd, index, tags, args)
-    return cast(JDiR, instance)    
+    instance = __bc_dictionary_record_types[tags[0]](bcd, index, tags, args)
+    return cast(bcDiR, instance)
+
+def is_bytecode(
+    bcd: "BcDictionary",
+    index: int,
+    tags: List[str],
+    args: List[int],
+) -> bool:
+    if tags[0] in __bc_dictionary_record_types:
+        return True
+    else: return False
+    

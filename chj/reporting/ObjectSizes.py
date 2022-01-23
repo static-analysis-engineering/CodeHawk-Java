@@ -55,5 +55,4 @@ class ObjectSizes():
             if nArrays > 0:
                 lines.append('  arrays     : ' + str(nArrays))
             lines.append(' ')
-        return '\n'.join(lines)
-                             
+        return '\n'.join(lines) 

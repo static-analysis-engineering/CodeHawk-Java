@@ -35,6 +35,7 @@ from chj.util.IndexedTable import (
 )
 
 import chj.index.Taint as T
+import chj.index.TaintDictionaryRecord as TD
 import xml.etree.ElementTree as ET
 
 from typing import Any, Callable, Dict, cast, List, Optional, Union, Tuple, TYPE_CHECKING
@@ -42,32 +43,6 @@ from typing import Any, Callable, Dict, cast, List, Optional, Union, Tuple, TYPE
 if TYPE_CHECKING:
     from collections.abc import ValuesView
     from chj.index.DataDictionary import DataDictionary
-
-taint_origin_constructors: Dict[
-    str,
-    Callable[[Tuple["TaintDictionary", int, List[str], List[int]]], T.TaintBase]
-] = {
-    'v': lambda x:T.VariableTaint(*x),
-    'f': lambda x:T.FieldTaint(*x),
-    'c': lambda x:T.CallerTaint(*x),
-    't': lambda x:T.TopTargetTaint(*x),
-    's': lambda x:T.StubTaint(*x)
-    }
-
-taint_node_type_constructors: Dict[
-    str,
-    Callable[[Tuple["TaintDictionary", int, List[str], List[int]]], T.TaintNodeBase]
-] = {
-    'f': lambda x:T.FieldTaintNode(*x),
-    'v': lambda x:T.VariableTaintNode(*x),
-    'q': lambda x:T.VariableEqTaintNode(*x),
-    'c': lambda x:T.CallTaintNode(*x),
-    'u': lambda x:T.UnknownCallTaintNode(*x),
-    'o': lambda x:T.ObjectFieldTaintNode(*x),
-    'j': lambda x:T.ConditionalTaintNode(*x),
-    's': lambda x:T.SizeTaintNode(*x),
-    'r': lambda x:T.RefEqualTaintNode(*x)
-    }
 
 class TaintDictionary(object):
 
@@ -193,10 +168,7 @@ class TaintDictionary(object):
 
     def _read_xml_taint_origin_table(self, txnode: ET.Element) -> None:
         def get_value(node: ET.Element) -> T.TaintBase:
-            rep = IT.get_rep(node)
-            tag = rep[1][0]
-            args = (self,) + rep
-            return taint_origin_constructors[tag](args)
+            return TD.construct_t_dictionary_record(*((self,) + IT.get_rep(node)), T.TaintBase)
         self.taint_origin_table.read_xml(txnode,'n',get_value)
 
     def _read_xml_taint_origin_list_table(self, txnode: ET.Element) -> None:
@@ -222,10 +194,7 @@ class TaintDictionary(object):
 
     def _read_xml_taint_node_type_table(self, txnode: ET.Element) -> None:
         def get_value(node: ET.Element) -> T.TaintNodeBase:
-            rep = IT.get_rep(node)
-            tag = rep[1][0]
-            args = (self,) + rep
-            return taint_node_type_constructors[tag](args)
+            return TD.construct_t_dictionary_record(*((self,) + IT.get_rep(node)), T.TaintNodeBase)
         self.taint_node_type_table.read_xml(txnode,'n',get_value)
 
         

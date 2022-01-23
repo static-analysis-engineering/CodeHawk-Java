@@ -26,19 +26,18 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-from chj.cost.CostBound import CostBound
-
-from typing import cast, Optional, TYPE_CHECKING
+from typing import cast, List, Optional, Tuple, Union, TYPE_CHECKING
 
 import chj.util.fileutil as UF
 
 if TYPE_CHECKING:
     from chj.cost.MethodCost import MethodCost
-    from chj.index.JTerm import JTermRange
+    from chj.index.JTerm import JTFloatConstant
+    import chj.index.JTerm as JT
 
 class CostMeasure():
 
-    def __init__(self, methodcost: "MethodCost", cost: "JTermRange"):
+    def __init__(self, methodcost: "MethodCost", cost: "JT.JTermRange"):
         self.methodcost = methodcost                         # MethodCost
         self.costmodel = self.methodcost.costmodel           # CostModel
         self.cost = cost                                     # JTermRange
@@ -52,22 +51,24 @@ class CostMeasure():
             raise UF.CHJError(str(self) + " is not a value.")
 
     def get_lowerbound(self) -> int:
-        if self.lowerbounds.is_constant(): return self.lowerbounds.get_jterms()[0].get_value()
+        if self.lowerbounds.is_constant(): 
+            return cast("JT.JTNumerical", self.lowerbounds.get_jterms()[0]).get_value()
         return 0
 
     def get_upperbound(self) -> int:
         if self.upperbounds.is_constant():
-            return self.upperbounds.get_jterms()[0].get_value()
+            return cast("JT.JTNumerical", self.upperbounds.get_jterms()[0]).get_value()
         else:
             raise UF.CHJError('Costmeasure ' + str(self) + ' does not have an upperbound')
 
-    def get_ub_symbolic_dependencies(self):
+    def get_ub_symbolic_dependencies(self) -> List["JT.JTSymbolicConstant"]:
         return self.cost.get_ub_symbolic_dependencies()
 
-    def get_range(self):
+    def get_range(self) -> Union[Tuple[int, int], Tuple["JTFloatConstant", "JTFloatConstant"]]:
         if self.cost.is_range(): return self.cost.get_range()
-        if self.cost.is_float_range(): return self.cost.get_float_range()
-
+        elif self.cost.is_float_range(): return self.cost.get_float_range()
+        else: 
+            raise UF.CHJError(str(self) + ' is not a range')
 
     def is_unknown(self) -> bool: return self.cost.is_ub_open_range()
 
@@ -83,8 +84,8 @@ class CostMeasure():
     def has_symbolic_bound(self) -> bool:
         return self.upperbounds.is_symbolic_expr()
 
-    def get_symbolic_bound(self):
-        return self.upperbounds.getsymbolicbound()
+    def get_symbolic_bound(self) -> "JT.JTermBase":
+        return self.upperbounds.get_symbolic_expr()
 
     def is_top (self) -> bool:
         return self.lowerbounds.is_top() and self.upperbounds.is_top()

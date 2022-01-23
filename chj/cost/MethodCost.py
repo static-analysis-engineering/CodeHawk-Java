@@ -26,7 +26,6 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-from chj.cost.BlockCost import BlockCost
 from chj.cost.CostMeasure import CostMeasure
 from chj.cost.SideChannelCheck import SideChannelCheck
 from chj.cost.LoopCost import LoopCost

@@ -29,6 +29,9 @@
 from typing import Any, Callable, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from chj.cost.MethodCost import MethodCost
+
+if TYPE_CHECKING:
     from chj.app.JavaMethod import JavaMethod
     from chj.index.AppAccess import AppAccess
     from chj.index.DataDictionary import DataDictionary
@@ -224,9 +227,9 @@ class CostSummary(object):
             lines.append('\nAmbiguity in method resolution ('
                              + str(len(multipledeps)) + ', '
                              + str(affected) + ')')
-            for j in sorted(multipledeps):
-                depsname = j.split('_')
-                lines.append(j + ' (' + str(multipledeps[j]) + ')')
+            for h in sorted(multipledeps):
+                depsname = h.split('_')
+                lines.append(h + ' (' + str(multipledeps[h]) + ')')
                 for d in depsname[1:]:
                     if d in  [ 'funcall', 'no', 'callees', '', 'pc' ]:
                         continue
@@ -243,7 +246,7 @@ class CostSummary(object):
         lines = []
         lines.append('\n\nMethods')
         lines.append('-' * 80)
-        def f(mc):
+        def f(mc: "MethodCost") -> None:
             name = str(self.get_cms(mc.cmsix))
             if not namefilter(name): return
             if mc.methodcost.is_value(): return
@@ -276,7 +279,7 @@ class CostSummary(object):
 
     def to_side_channels_string(self) -> str:
         lines = []
-        def f(mc):
+        def f(mc: "MethodCost") -> None:
             if mc.has_sidechannel_checks():
                 lines.append('\n' + mc.get_qname() + ' (' + str(mc.cmsix) + ')')
                 for sc in mc.sidechannelchecks:

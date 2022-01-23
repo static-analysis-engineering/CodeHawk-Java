@@ -4,7 +4,6 @@
 # ------------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2017-2020 Kestrel Technology LLC
 # Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -30,20 +29,20 @@ import xml.etree.ElementTree as ET
 
 import chj.util.IndexedTable as IT
 
-from typing import Callable, cast, Dict, List, Tuple, Type, TypeVar, Union, TYPE_CHECKING
+from typing import Callable, cast, Dict, List, Tuple, Type, TypeVar, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from chj.index.JTypeDictionary import JTypeDictionary
+    from chj.index.JTermDictionary import JTermDictionary
 
-class JDictionaryRecord(IT.IndexedTableValue):
+class JTermDictionaryRecord(IT.IndexedTableValue):
     """Base class for all objects kept in the JDictionary."""
 
     def __init__(self,
-            tpd: "JTypeDictionary",
+            jtd: "JTermDictionary",
             index: int,
             tags: List[str],
             args: List[int]) -> None:
-        self.tpd = tpd
+        self.jtd = jtd
         self.index = index
         self.tags = tags
         self.args = args
@@ -56,23 +55,24 @@ class JDictionaryRecord(IT.IndexedTableValue):
         if len(argstr) > 0: node.set('a',argstr)
         node.set('ix',str(self.index))
 
-__j_dictionary_record_types: Dict[Tuple[type, str], Type[JDictionaryRecord]] = {}
-JDiR = TypeVar('JDiR', bound=JDictionaryRecord, covariant=True)
+__j_term_dictionary_record_types: Dict[Tuple[type, str], Type[JTermDictionaryRecord]] = {}
 
-def j_dictionary_record_tag(tag_name: str) -> Callable[[Type[JDiR]], Type[JDiR]]:
-    def handler(t: Type[JDiR]) -> Type[JDiR]:
-        __j_dictionary_record_types[(t.__bases__[0], tag_name)] = t
+JtDiR = TypeVar('JtDiR', bound=JTermDictionaryRecord, covariant=True)
+
+def j_dictionary_record_tag(tag_name: str) -> Callable[[Type[JtDiR]], Type[JtDiR]]:
+    def handler(t: Type[JtDiR]) -> Type[JtDiR]:
+        __j_term_dictionary_record_types[(t.__bases__[0], tag_name)] = t
         return t
     return handler
 
-def construct_j_dictionary_record(
-    tpd: "JTypeDictionary",
+def construct_jterm_dictionary_record(
+    jtd: "JTermDictionary",
     index: int,
     tags: List[str],
     args: List[int],
-    superclass: Type[JDiR]
-) -> JDiR:
-    if (superclass, tags[0]) not in __j_dictionary_record_types:
+    superclass: Type[JtDiR]
+) -> JtDiR:
+    if (superclass, tags[0]) not in __j_term_dictionary_record_types:
         raise Exception("unknown type: " + tags[0])
-    instance = __j_dictionary_record_types[(superclass, tags[0])](tpd, index, tags, args)
-    return cast(JDiR, instance)    
+    instance = __j_term_dictionary_record_types[(superclass, tags[0])](jtd, index, tags, args)
+    return cast(JtDiR, instance)    

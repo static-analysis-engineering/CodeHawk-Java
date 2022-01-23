@@ -1,10 +1,10 @@
 # ------------------------------------------------------------------------------
 # CodeHawk Java Analyzer
-# Author: Henny Sipma
+# Author: Andrew McGraw
 # ------------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -15,7 +15,7 @@
 #
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,39 +25,43 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-from chj.cost.CostMeasure import CostMeasure
+import chj.util.IndexedTable as IT
 
-import chj.util.fileutil as UF
-
-from typing import TYPE_CHECKING
+from typing import cast, Dict, Callable, List, Type, TypeVar, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import xml.etree.ElementTree as ET
-    from chj.cost.CostModel import CostModel
+    from chj.index.JTypeDictionary import JTypeDictionary
 
-class BlockCost():
+class JTypeDictionaryRecord(IT.IndexedTableValue):
+    def __init__(
+        self,
+        jtd: "JTypeDictionary",
+        index: int,
+        tags: List[str],
+        args: List[int]
+    ) -> None:
+        self.jtd = jtd
+        self.index = index
+        self.tags = tags
+        self.args = args
 
-    def __init__(self, costmodel: "CostModel", xnode: "ET.Element"):
-        self.costmodel = costmodel
-        self.xnode = xnode
-        #self.pc = int(self.xnode.get('pc'))
-        #self.cost = CostMeasure(self.costmodel, self.xnode.find('bcost'))
+__j_dictionary_record_types: Dict[Tuple[type, str], Type[JTypeDictionaryRecord]] = {}
+JDiR = TypeVar('JDiR', bound=JTypeDictionaryRecord, covariant=True)
 
-    @property
-    def pc(self):
-        pc = self.xnode.get('pc')
-        if pc:
-            return int(pc)
-        else:
-            raise UF.CHJError('PC of Block missing')
+def j_dictionary_record_tag(tag_name: str) -> Callable[[Type[JDiR]], Type[JDiR]]:
+    def handler(t: Type[JDiR]) -> Type[JDiR]:
+        __j_dictionary_record_types[(t.__bases__[0], tag_name)] = t
+        return t
+    return handler
 
-    @property
-    def cost(self):
-        bcost = self.xnode.find('bcost')
-        if bcost:
-            return CostMeasure(self.costmodel, bcost)
-        else:
-            raise UF.CHJError('BCost of Block missing')
-
-    def __str__(self):
-        return (str(self.pc) + ': ' + str(self.cost))
+def construct_j_dictionary_record(
+    jtd: "JTypeDictionary",
+    index: int,
+    tags: List[str],
+    args: List[int],
+    superclass: Type[JDiR]
+) -> JDiR:
+    if (superclass, tags[0]) not in __j_dictionary_record_types:
+        raise Exception("unknown type: " + tags[0])
+    instance = __j_dictionary_record_types[(superclass, tags[0])](jtd, index, tags, args)
+    return cast(JDiR, instance)

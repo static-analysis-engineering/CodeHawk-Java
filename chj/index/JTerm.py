@@ -26,15 +26,20 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-import chj.index.JDictionaryRecord as JD
 import chj.util.IndexedTable as IT
 
 import chj.util.fileutil as UF
 
-from typing import cast, List, Optional, Tuple, TYPE_CHECKING
+import chj.index.JTermDictionaryRecord as JTD
+
+from typing import cast, List, Optional, Tuple, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chj.index.JTermDictionary import JTermDictionary
+    from chj.index.JValueTypes import JValueTypeBase
+
+SUPPORTS_MATH = Union["JTermBase", "JTConstant", "JTFloatConstant", "JTArithmeticExpr"]
+CONSTANT_TYPES = Union["JTConstant", "JTNumerical"]
 
 opstrings = {
     'mult': ' * ',
@@ -53,14 +58,14 @@ def convert_op(s: str) -> str:
     if s in opstrings: return opstrings[s]
     return s
 
-class JTermBase(JD.JDictionaryRecord):
+class JTermBase(JTD.JTermDictionaryRecord):
 
     def __init__(self,
             jtd: "JTermDictionary",
             index: int,
             tags: List[str],
             args: List[int]):
-        JD.JDictionaryRecord.__init__(self,index,tags,args)
+        JTD.JTermDictionaryRecord.__init__(self,jtd,index,tags,args)
         self.jtd = jtd
 
     def is_constant(self) -> bool: return False
@@ -79,26 +84,28 @@ class JTermBase(JD.JDictionaryRecord):
 
     def is_symbolic_constant(self) -> bool: return False
 
-    def get_symbolic_dependencies(self): return []
+    def get_symbolic_dependencies(self) -> List["JTSymbolicConstant"]: return []
 
     def has_symbolic_dependency(self, t: "JTermBase") -> bool: return False
 
-    def to_float(self): return self
+    def to_float(self) -> "JTFloatConstant": 
+        raise NotImplementedError('to_float not implemented for JTermBase')
 
-    def add(self,other):
+    def add(self, 
+            other: "JTermBase") -> SUPPORTS_MATH:
         if other.is_zero(): return self
         if other.is_constant(): return other.add(self)
         if other.is_float_constant(): return other.add(self)
         return self.jtd.mk_arithmetic_jterm(self,other,'add')
 
-    def div(self,other):
+    def div(self, other: "JTermBase") -> Union["JTermBase", "JTArithmeticExpr"]:
         if other.is_one(): return self        
         return self.jtd.mk_arithmetic_jterm(self,other,'div')
 
-    def simplify(self) -> "JTermBase": return self
+    def simplify(self) -> Union["JTFloatConstant", "JTArithmeticExpr"]:
+        raise NotImplementedError('simplify not implemented for JTermBase')
 
     def __str__(self) -> str: return 'jdtermbase'
-
 
 class JTStringConstant(JTermBase):
 
@@ -156,6 +163,7 @@ class JTFloat(JTermBase):
     def __str__(self) -> str: return self.tags[0]
 
 
+@JTD.j_dictionary_record_tag("xv")
 class JTAuxiliaryVar(JTermBase):
 
     def __init__(self,
@@ -172,6 +180,7 @@ class JTAuxiliaryVar(JTermBase):
     def __str__(self) -> str: return 'aux:' + self.get_name()
 
 
+@JTD.j_dictionary_record_tag("lv")
 class JTLocalVar(JTermBase):
 
     def __init__(self,
@@ -188,6 +197,7 @@ class JTLocalVar(JTermBase):
     def __str__(self) -> str: return 'r:' + str(self.get_index())
 
 
+@JTD.j_dictionary_record_tag("lc")
 class JTLoopCounter(JTermBase):
 
     def __init__(self,
@@ -204,6 +214,7 @@ class JTLoopCounter(JTermBase):
     def __str__(self) -> str: return 'lc:' + str(self.get_index())
 
 
+@JTD.j_dictionary_record_tag("c")
 class JTConstant(JTermBase):
 
     def __init__(self,
@@ -226,16 +237,18 @@ class JTConstant(JTermBase):
     def to_float(self) -> "JTFloatConstant":
         return self.jtd.mk_float_constant(self.get_value())
 
-    def add(self,other):
+    def add(self, other: JTermBase) -> SUPPORTS_MATH:
         if other.is_constant():
+            other = cast("JTConstant", other)
             v = self.get_value() + other.get_value()
             return self.jtd.mk_constant_jterm(v)
         if other.is_float_constant():
+            other = cast("JTFloatConstant", other)
             return self.jtd.mk_float_constant(self.to_float().get_value() + other.get_value())
         else:
             return JTermBase.add(self,other)
 
-    def div(self,other):
+    def div(self, other: JTermBase) -> SUPPORTS_MATH:
         if other.is_one(): return self
         if other.is_constant(): return self.to_float().div(other.to_float())
         if other.is_float_constant(): return self.to_float().div(other)
@@ -248,6 +261,7 @@ class JTConstant(JTermBase):
     def __str__(self) -> str: return str(self.get_value())
 
 
+@JTD.j_dictionary_record_tag("sf")
 class JTStaticFieldValue(JTermBase):
 
     def __init__(self,
@@ -272,6 +286,7 @@ class JTStaticFieldValue(JTermBase):
         return 'sf:' + str(self.get_class_name()) + '.' + self.get_field_name()
 
 
+@JTD.j_dictionary_record_tag("of")
 class JTObjectFieldValue(JTermBase):
 
     def __init__(self,
@@ -306,6 +321,7 @@ class JTObjectFieldValue(JTermBase):
                     + self.get_field_name())
 
 
+@JTD.j_dictionary_record_tag("bc")
 class JTBoolConstant(JTermBase):
 
     def __init__(self,
@@ -322,6 +338,7 @@ class JTBoolConstant(JTermBase):
         return 'bc:' + str(self.get_value())
 
 
+@JTD.j_dictionary_record_tag("fc")
 class JTFloatConstant(JTermBase):
 
     def __init__(self,
@@ -336,7 +353,7 @@ class JTFloatConstant(JTermBase):
 
     def is_float_constant(self) -> bool: return True
 
-    def div(self, other: JTermBase) -> "JTFloatConstant":
+    def div(self, other: JTermBase) -> Union["JTArithmeticExpr", "JTFloatConstant"]:
         if other.is_constant():
             return self.jtd.mk_float_constant(self.get_value() / other.to_float().get_value())
         if other.is_float_constant():
@@ -344,7 +361,7 @@ class JTFloatConstant(JTermBase):
             return self.jtd.mk_float_constant(self.get_value() / other_as_float.get_value())
         return self.jtd.mk_arithmetic_jterm(self,other,'div')
 
-    def add(self, other: JTermBase) -> "JTFloatConstant":
+    def add(self, other: JTermBase) -> Union["JTArithmeticExpr", "JTFloatConstant"]:
         if other.is_constant():
             return self.jtd.mk_float_constant(self.get_value() + other.to_float().get_value())
         if other.is_float_constant():
@@ -352,9 +369,13 @@ class JTFloatConstant(JTermBase):
             return self.jtd.mk_float_constant(self.get_value() + other_as_float.get_value())
         return self.jtd.mk_arithmetic_jterm(self,other,'add')
 
+    def simplify(self) -> "JTFloatConstant":
+        return self
+
     def __str__(self) -> str: return str(self.get_value())
 
 
+@JTD.j_dictionary_record_tag("sc")
 class JTermStringConstant(JTermBase):
 
     def __init__(self,
@@ -371,6 +392,7 @@ class JTermStringConstant(JTermBase):
         return 'sc:' + str(self.get_string())
 
 
+@JTD.j_dictionary_record_tag("al")
 class JTArrayLength(JTermBase):
 
     def __init__(self,
@@ -380,7 +402,7 @@ class JTArrayLength(JTermBase):
             args: List[int]):
         JTermBase.__init__(self,jtd,index,tags,args)
 
-    def get_jterm(self):
+    def get_jterm(self) -> "JTermBase":
         return self.jtd.get_jterm(int(self.args[0]))
 
     def is_symbolic_expr(self) -> bool: return True
@@ -389,6 +411,7 @@ class JTArrayLength(JTermBase):
         return 'arraylength(' + str(self.get_jterm()) + ')'
 
 
+@JTD.j_dictionary_record_tag("sl")
 class JTStringLength(JTermBase):
 
     def __init__(self,
@@ -398,7 +421,7 @@ class JTStringLength(JTermBase):
             args: List[int]):
         JTermBase.__init__(self,jtd,index,tags,args)
 
-    def get_jterm(self):
+    def get_jterm(self) -> "JTermBase":
         return self.jtd.get_jterm(int(self.args[0]))
 
     def is_symbolic_expr(self) -> bool: return True
@@ -407,6 +430,7 @@ class JTStringLength(JTermBase):
         return 'stringlength(' + str(self.get_jterm()) + ')'
 
 
+@JTD.j_dictionary_record_tag("si")
 class JTSize(JTermBase):
 
     def __init__(self,
@@ -416,7 +440,7 @@ class JTSize(JTermBase):
             args: List[int]):
         JTermBase.__init__(self,jtd,index,tags,args)
 
-    def get_jterm(self):
+    def get_jterm(self) -> "JTermBase":
         return self.jtd.get_jterm(int(self.args[0]))
 
     def is_symbolic_expr(self) -> bool: return True
@@ -448,8 +472,8 @@ class JTSymbolicJTermConstant(JTermBase):
         else:
             raise UF.CHJError(str(self) + " does not have an upper bound")
 
-    def get_type(self):
-        return self.jtd.jd.get_value_type(int(self.args[0]))
+    def get_type(self) -> "JValueTypeBase":
+        return self.jtd.jd.tpd.get_value_type(int(self.args[0]))
 
     def has_lower_bound(self) -> bool: return (int(self.args[1]) > 0)
 
@@ -458,6 +482,7 @@ class JTSymbolicJTermConstant(JTermBase):
     def __str__(self) -> str: return (self.get_name())
 
 
+@JTD.j_dictionary_record_tag("symc")
 class JTSymbolicConstant(JTermBase):
 
     def __init__(self,
@@ -473,7 +498,7 @@ class JTSymbolicConstant(JTermBase):
     def get_name(self) -> str:
         return self.get_symbolic_jterm_constant().get_name()
 
-    def get_type(self):
+    def get_type(self) -> "JValueTypeBase":
         return self.get_symbolic_jterm_constant().get_type()
 
     def is_symbolic_constant(self) -> bool: return True
@@ -486,6 +511,7 @@ class JTSymbolicConstant(JTermBase):
         return 'symc:' + str(self.get_symbolic_jterm_constant())
 
 
+@JTD.j_dictionary_record_tag("ar")
 class JTArithmeticExpr(JTermBase):
 
     def __init__(self,
@@ -505,7 +531,7 @@ class JTArithmeticExpr(JTermBase):
 
     def is_compound(self) -> bool: return True
 
-    def get_symbolic_dependencies(self):
+    def get_symbolic_dependencies(self) -> List["JTSymbolicConstant"]:
         return (self.get_exp1().get_symbolic_dependencies()
                     + self.get_exp2().get_symbolic_dependencies())
 
@@ -517,7 +543,7 @@ class JTArithmeticExpr(JTermBase):
         return (self.get_exp1().is_symbolic_expr()
                     or self.get_exp2().is_symbolic_expr())
 
-    def simplify(self) -> JTermBase:
+    def simplify(self) -> Union["JTFloatConstant", "JTArithmeticExpr"]:
         jt1 = self.get_exp1().simplify()
         jt2 = self.get_exp2().simplify()
         if self.get_op() == 'div' and jt1.is_float_constant() and jt2.is_float_constant():
@@ -573,10 +599,10 @@ class JTRelationalExpr(JTermBase):
 
     def get_op(self) -> str: return self.tags[0]
 
-    def get_exp1(self):
+    def get_exp1(self) -> JTermBase:
         return self.jtd.get_jterm(int(self.args[0]))
 
-    def get_exp2(self):
+    def get_exp2(self) -> JTermBase:
         return self.jtd.get_jterm(int(self.args[1]))
 
     def __str__(self) -> str:
@@ -612,7 +638,7 @@ class JTermList(JTermBase):
     def equals(self, other: JTermBase) -> bool:
         return other.is_jterm_list() and self.index == other.index
 
-    def get_jterms(self):
+    def get_jterms(self) -> List[JTermBase]:
         return [ self.jtd.get_jterm(int(x)) for x in self.args ]
 
     def get_length(self) -> int: return len(self.get_jterms())
@@ -625,20 +651,22 @@ class JTermList(JTermBase):
         return len(self.args) == 1 and self.get_jterms()[0].is_constant()
 
     def get_constant(self) -> int:
-        if self.is_constant(): 
-            return self.get_jterms()[0].get_value()
+        if self.is_constant():
+            return cast(CONSTANT_TYPES, self.get_jterms()[0]).get_value()
         else:
             raise UF.CHJError(str(self) + 'is not a constant.')
 
     def is_symbolic_expr(self) -> bool:
         return any( [ x.is_symbolic_expr() for x in self.get_jterms() ] )
 
-    def get_symbolic_dependencies(self):
+    def get_symbolic_dependencies(self) -> List["JTSymbolicConstant"]:
         return sum ( [ t.get_symbolic_dependencies() for t in self.get_jterms() ], [])
 
-    def get_symbolic_expr(self):
+    def get_symbolic_expr(self) -> JTermBase:
         if self.is_symbolic_expr():
             return [ x for x in self.get_jterms() if x.is_symbolic_expr() ][0]
+        else:
+            raise UF.CHJError(str(self) + ' is not a symbolic expr')
 
     def __str__(self) -> str: return ','.join( str(t) for t in self.get_jterms())
 
@@ -658,7 +686,7 @@ class JTermRange(JTermBase):
     def get_upper_bounds(self) -> JTermList:
         return self.jtd.get_jterm_list(int(self.args[1]))
 
-    def get_ub_symbolic_dependencies(self):
+    def get_ub_symbolic_dependencies(self) -> List["JTSymbolicConstant"]:
         return self.get_upper_bounds().get_symbolic_dependencies()
 
     def is_top(self) -> bool:
@@ -678,11 +706,13 @@ class JTermRange(JTermBase):
         return False
     '''
 
-    def get_float_range(self):
+    def get_float_range(self) -> Tuple["JTFloatConstant", "JTFloatConstant"]:
         if self.is_float_range():
-            lb = self.get_lower_bounds().get_jterms()[0].simplify()
-            ub = self.get_upper_bounds().get_jterms()[0].simplify()
+            lb = cast("JTFloatConstant", self.get_lower_bounds().get_jterms()[0]).simplify()
+            ub = cast("JTFloatConstant", self.get_upper_bounds().get_jterms()[0]).simplify()
             return (lb,ub)
+        else:
+            raise UF.CHJError(str(self) + ' is not a float range')
 
     def get_value(self) -> int:
         if self.is_value(): 
@@ -723,8 +753,11 @@ class JTermRange(JTermBase):
     def is_symbolic_expr(self) -> bool:
         return self.get_upper_bounds().is_symbolic_expr()
 
-    def get_symbolic_expr(self):
-        if self.is_symbolic_expr(): return self.get_upper_bounds().get_symbolic_expr()
+    def get_symbolic_expr(self) -> JTermBase:
+        if self.is_symbolic_expr(): 
+            return self.get_upper_bounds().get_symbolic_expr()
+        else:
+            raise UF.CHJError(str(self) + ' is not a symbolic expression')
 
     def __str__(self) -> str:
         if self.is_top(): return 'T'

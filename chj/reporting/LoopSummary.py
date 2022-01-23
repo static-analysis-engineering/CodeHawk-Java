@@ -103,35 +103,6 @@ class LoopSummary(object):
                                   str(l.get_bound()).rjust(14)))
         return '\n'.join(lines)
 
-    def taint_list_to_string(self):
-        result = {}
-        for (_, m) in self.app.get_methods():
-            if m.get_loop_count() > 0:
-                loops = m.get_loops()
-                for l in loops:
-                    depth = l.depth
-                    pc = l.first_pc
-                    lctaint = m.get_variable_taint('lc',pc)
-                    if not lctaint is None:
-                        untrusted = self.jd.gettaintoriginset(lctaint.getuntrustedtaint())
-                        unknown = self.jd.gettaintoriginset(lctaint.getunknowntaint())
-                        origins = set([x.getid() for x in untrusted.getorigins() +
-                                           unknown.getorigins()])
-                        for t in origins:
-                            if t > 0 and (t in self.sources or len(self.sources) == 0):
-                                if not t in result: result[t] = []
-                                result[t].append((m,pc,depth))
-
-        lines = []
-        for t in result:
-            taint = self.jd.get_taint_originsite(t)
-            lines.append('\n' + str(t) + ': ' + str(taint))
-            for (m,pc,depth) in sorted(result[t],
-                                           key=lambda m,pc,depth:(depth,m.get_aqname()),reverse=True):
-                lines.append('  ' + m.get_aqname() + ' @ ' + str(pc) + 
-                ' (inner loops: ' + str(depth) + ')')
-        return '\n'.join(lines)
-
     def taint_from_included_origin(self, tnode: "T.VariableTaintNode") -> bool:
         if len(self.sources) == 0: return True
         return tnode.index in self.sources
@@ -154,32 +125,3 @@ class LoopSummary(object):
             else:
                 result.append('_')
         return ','.join(result)
-
-    def looptaintstostring(self) -> None:
-        for (_, m) in self.app.get_methods():
-            if m.get_loop_count() > 0:
-                sources = self._getlooptaintsources(m)
-                if len(sources) > 0:
-                    print('\n' + m.get_aqname())
-                    for pc in sources:
-                        print('  ' + str(pc))
-                        for x in sources[pc]:
-                            if x.getid() == 39 or x.getid() == 71:
-                                print('    ' + str(x))
-
-    def _getlooptaintsources(self, m):
-        result = {}
-        for l in m.get_loops():
-            firstpc = l.first_pc
-            lctaint = m.get_variable_taint('lc',firstpc)
-            if not lctaint is None:
-                untrusted = self.jd.get_taint_origin_set(lctaint.getuntrustedtaint())
-                unknown = self.jd.get_taint_origin_set(lctaint.getunknowntaint())
-                if untrusted.isempty() and unknown.isempty():
-                    ()
-                else:
-                    result[firstpc] = []
-                    result[firstpc].extend(untrusted.getorigins())
-                    result[firstpc].extend(unknown.getorigins())
-        return result
-                    

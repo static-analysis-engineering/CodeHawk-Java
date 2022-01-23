@@ -28,10 +28,11 @@
 
 import chj.util.fileutil as UF
 
-from typing import Dict, Tuple, TYPE_CHECKING
+from typing import Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chj.app.JavaMethod import JavaMethod
+    from chj.index.JTerm import JTermBase
     from collections.abc import ItemsView
     import xml.etree.ElementTree as ET
 
@@ -84,8 +85,8 @@ class Loop(object):
         else:
             raise UF.CHJError('instrs missing from xml for loop in ' + self.jmethod.get_qname())
 
-    def get_max_iterations(self):
-        result = []
+    def get_max_iterations(self) -> List["JTermBase"]:
+        result: List["JTermBase"] = []
         inode = self.xnode.find('max-iterations')
         if inode is None: 
             return result
@@ -93,7 +94,7 @@ class Loop(object):
             result.append(self.jd.jtd.read_xml_jterm(jt))
         return result
 
-    def get_constant_bounds(self):
+    def get_constant_bounds(self) -> List["JTermBase"]:
         return [ x for x in self.get_max_iterations() if x.is_constant() ]
 
     def get_max_bound(self) -> int:

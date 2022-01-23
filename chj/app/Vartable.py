@@ -33,6 +33,7 @@ from typing import Dict, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from chj.app.JavaMethod import JavaMethod
     from chj.index.JType import StringConstant
+    from chj.index.JValueTypes import JValueTypeBase
     import xml.etree.ElementTree as ET
 
 class VartableSlot():
@@ -56,7 +57,7 @@ class VartableSlot():
             raise UF.CHJError('iname missing for xml of vartable of method ' + self.vartable.jmethod.get_qname())
 
     @property
-    def vtype(self):
+    def vtype(self) -> "JValueTypeBase":
         vtype = self.xnode.get('ivty')
         if vtype is not None:
             return self.tpd.get_value_type(int(vtype))

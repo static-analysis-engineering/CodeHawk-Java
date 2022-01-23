@@ -26,7 +26,7 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-import chj.index.JDictionaryRecord as JD
+import chj.app.BcDictionaryRecord as BCD
 import chj.util.fileutil as UF
 
 from typing import List, TYPE_CHECKING
@@ -34,15 +34,21 @@ from typing import List, TYPE_CHECKING
 if TYPE_CHECKING:
     from chj.app.BcDictionary import BcDictionary
     from chj.index.Classname import Classname
+    from chj.index.JValueTypes import JValueTypeBase
+    from chj.index.JObjectTypes import JObjectTypeBase
+    from chj.index.JTerm import JTermRange
+    from chj.index.JType import StringConstant
+    from chj.index.FieldSignature import FieldSignature
+    from chj.index.MethodSignature import MethodSignature
 
-class BcBase(JD.JDictionaryRecord):
+class BcBase(BCD.BcDictionaryRecord):
 
     def __init__(self,
             bcd: "BcDictionary",
             index: int,
             tags: List[str],
             args: List[int]):
-        JD.JDictionaryRecord.__init__(self,index,tags,args)
+        BCD.BcDictionaryRecord.__init__(self,bcd,index,tags,args)
         self.bcd = bcd                               # BcDictionary
         self.jd = self.bcd.jd                        # DataDictionary
         self.tpd = self.jd.tpd                       # JTypeDictionary
@@ -75,11 +81,8 @@ class BcSlot(BcBase):
 
     def get_level(self) -> int: return int(self.args[2])
 
-    def get_types(self):
-        print(str(self.args))
+    def get_types(self) -> List["JValueTypeBase"]:
         return [ self.tpd.get_value_type(int(x)) for x in self.args[4:] ]
-
-    def get_slot_value(self): return self.jterms.get_jterm_range(int(self.args[3]))
 
     def get_src_pcs(self) -> List[int]:
         srctag = self.tags[0]
@@ -160,7 +163,7 @@ class BcInstruction(JBytecodeBase):
 
     def __str__(self) -> str: return self.opcstr(self.tags[0])
 
-
+@BCD.bc_dictionary_record_tag("ld")
 class BcLoad(JBytecodeBase):
 
     def __init__(self,
@@ -177,7 +180,7 @@ class BcLoad(JBytecodeBase):
     def __str__(self) -> str:
         return self.opcstr('load_' + str(self.get_var_index())) + str(self.get_type())
 
-
+@BCD.bc_dictionary_record_tag("st")
 class BcStore(JBytecodeBase):
 
     def __init__(self,
@@ -195,6 +198,7 @@ class BcStore(JBytecodeBase):
         return self.opcstr('store_' + str(self.get_var_index())) + str(self.get_type())
 
 
+@BCD.bc_dictionary_record_tag("inc")
 class BcIInc(JBytecodeBase):
 
     def __init__(self,
@@ -224,6 +228,7 @@ class JBytecodeConstBase(JBytecodeBase):
     def is_load_constant(self) -> bool: return True
 
 
+@BCD.bc_dictionary_record_tag("icst")
 class BcIntConst(JBytecodeConstBase):
 
     def __init__(self,
@@ -237,6 +242,7 @@ class BcIntConst(JBytecodeConstBase):
 
     def __str__(self) -> str: return self.opcstr('iconst') + str(self.get_value())
 
+@BCD.bc_dictionary_record_tag("lcst")
 class BcLongConst(JBytecodeConstBase):
 
     def __init__(self,
@@ -251,6 +257,7 @@ class BcLongConst(JBytecodeConstBase):
     def __str__(self) -> str: return self.opcstr('lconst') + str(self.get_value())
 
 
+@BCD.bc_dictionary_record_tag("fcst")
 class BcFloatConst(JBytecodeConstBase):
 
     def __init__(self,
@@ -264,6 +271,7 @@ class BcFloatConst(JBytecodeConstBase):
 
     def __str__(self) -> str: return self.opcstr('fconst') + str(self.get_value())
 
+@BCD.bc_dictionary_record_tag("dcst")
 class BcDoubleConst(JBytecodeConstBase):
 
     def __init__(self,
@@ -277,6 +285,7 @@ class BcDoubleConst(JBytecodeConstBase):
 
     def __str__(self) -> str: return self.opcstr('dconst') + str(self.get_value())
 
+@BCD.bc_dictionary_record_tag("bcst")
 class BcByteConst(JBytecodeConstBase):
 
     def __init__(self,
@@ -290,6 +299,7 @@ class BcByteConst(JBytecodeConstBase):
 
     def __str__(self) -> str: return self.opcstr('bconst') + str(self.get_value())
 
+@BCD.bc_dictionary_record_tag("shcst")
 class BcShortConst(JBytecodeConstBase):
 
     def __init__(self,
@@ -303,6 +313,7 @@ class BcShortConst(JBytecodeConstBase):
 
     def __str__(self) -> str: return self.opcstr('sconst') + str(self.get_value())
 
+@BCD.bc_dictionary_record_tag("scst")
 class BcStringConst(JBytecodeConstBase):
 
     def __init__(self,
@@ -312,12 +323,15 @@ class BcStringConst(JBytecodeConstBase):
             args: List[int]):
         JBytecodeConstBase.__init__(self,bcd,index,tags,args)
 
-    def get_string_constant(self): return self.tpd.get_string(int(self.args[0]))
+    def get_string_constant(self) -> "StringConstant": return self.tpd.get_string(int(self.args[0]))
 
-    def is_load_string(self) -> bool: return True
+    def is_load_string(self) -> bool: 
+        return True
 
-    def __str__(self) -> str: return self.opcstr('ldc') + str(self.get_string_constant())
+    def __str__(self) -> str: 
+        return self.opcstr('ldc') + str(self.get_string_constant())
 
+@BCD.bc_dictionary_record_tag("ccst")
 class BcClassConst(JBytecodeConstBase):
 
     def __init__(self,
@@ -327,7 +341,7 @@ class BcClassConst(JBytecodeConstBase):
             args: List[int]):
         JBytecodeConstBase.__init__(self,bcd,index,tags,args)
 
-    def get_class(self): return self.tpd.get_object_type(int(self.args[0]))
+    def get_class(self) -> "JObjectTypeBase": return self.tpd.get_object_type(int(self.args[0]))
 
     def __str__(self) -> str: return self.opcstr('ldc') + str(self.get_class())
 
@@ -345,6 +359,7 @@ class JBytecodeArithmeticBase(JBytecodeBase):
     def is_arithmetic_instruction(self) -> bool: return True
 
 
+@BCD.bc_dictionary_record_tag("add")
 class BcAdd(JBytecodeArithmeticBase):
 
     def __init__(self,
@@ -356,6 +371,7 @@ class BcAdd(JBytecodeArithmeticBase):
 
     def __str__(self) -> str: return self.opcstr('add') + str(self.get_type())
 
+@BCD.bc_dictionary_record_tag("sub")
 class BcSub(JBytecodeArithmeticBase):
 
     def __init__(self,
@@ -367,6 +383,7 @@ class BcSub(JBytecodeArithmeticBase):
 
     def __str__(self) -> str: return self.opcstr('sub') + str(self.get_type())
 
+@BCD.bc_dictionary_record_tag("mult")
 class BcMult(JBytecodeArithmeticBase):
 
     def __init__(self,
@@ -378,6 +395,7 @@ class BcMult(JBytecodeArithmeticBase):
 
     def __str__(self) -> str: return self.opcstr('mult') + str(self.get_type())
 
+@BCD.bc_dictionary_record_tag("div")
 class BcDiv(JBytecodeArithmeticBase):
 
     def __init__(self,
@@ -389,6 +407,7 @@ class BcDiv(JBytecodeArithmeticBase):
 
     def __str__(self) -> str: return self.opcstr('div') + str(self.get_type())
 
+@BCD.bc_dictionary_record_tag("rem")
 class BcRem(JBytecodeArithmeticBase):
 
     def __init__(self,
@@ -400,6 +419,7 @@ class BcRem(JBytecodeArithmeticBase):
 
     def __str__(self) -> str: return self.opcstr('rem') + str(self.get_type())
 
+@BCD.bc_dictionary_record_tag("neg")
 class BcNeg(JBytecodeArithmeticBase):
 
     def __init__(self,
@@ -425,6 +445,7 @@ class JBytecodeConditionalJumpBase(JBytecodeBase):
     def __str__(self) -> str: return self.opcstr(self.tags[0]) + str(self.get_target_pc())
 
 
+@BCD.bc_dictionary_record_tag("ifeq")
 class BcIfEq(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -435,6 +456,7 @@ class BcIfEq(JBytecodeConditionalJumpBase):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
 
+@BCD.bc_dictionary_record_tag("ifne")
 class BcIfNe(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -445,6 +467,7 @@ class BcIfNe(JBytecodeConditionalJumpBase):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
 
+@BCD.bc_dictionary_record_tag("iflt")
 class BcIfLt(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -455,6 +478,7 @@ class BcIfLt(JBytecodeConditionalJumpBase):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
 
+@BCD.bc_dictionary_record_tag("ifge")
 class BcIfGe(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -464,6 +488,7 @@ class BcIfGe(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("ifgt")
 class BcIfGt(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -473,6 +498,7 @@ class BcIfGt(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("ifle")
 class BcIfLe(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -482,6 +508,7 @@ class BcIfLe(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("ifnull")
 class BcIfNull(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -491,6 +518,7 @@ class BcIfNull(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("ifnonnull")
 class BcIfNonNull(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -500,6 +528,7 @@ class BcIfNonNull(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("ifcmpeq")
 class BcIfCmpEq(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -509,6 +538,7 @@ class BcIfCmpEq(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("ifcmpne")
 class BcIfCmpNe(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -518,6 +548,7 @@ class BcIfCmpNe(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("icmplt")
 class BcIfCmpLt(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -527,6 +558,7 @@ class BcIfCmpLt(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("igcmpge")
 class BcIfCmpGe(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -536,6 +568,7 @@ class BcIfCmpGe(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("ifcmpgt")
 class BcIfCmpGt(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -545,6 +578,7 @@ class BcIfCmpGt(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("ifcmple")
 class BcIfCmpLe(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -554,6 +588,7 @@ class BcIfCmpLe(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("ifcmpaeq")
 class BcIfCmpAEq(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -563,6 +598,7 @@ class BcIfCmpAEq(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("ifcmpane")
 class BcIfCmpANe(JBytecodeConditionalJumpBase):
 
     def __init__(self,
@@ -572,6 +608,7 @@ class BcIfCmpANe(JBytecodeConditionalJumpBase):
             args: List[int]):
         JBytecodeConditionalJumpBase.__init__(self,bcd,index,tags,args)
 
+@BCD.bc_dictionary_record_tag("goto")
 class BcGoto(JBytecodeBase):
 
     def __init__(self,
@@ -585,6 +622,7 @@ class BcGoto(JBytecodeBase):
 
     def __str__(self) -> str: return self.opcstr('goto') + str(self.get_target_pc())
 
+@BCD.bc_dictionary_record_tag("jsr")
 class BcJsr(JBytecodeBase):
 
     def __init__(self,
@@ -598,6 +636,7 @@ class BcJsr(JBytecodeBase):
 
     def __str__(self) -> str: return self.opcstr('jsr') + str(self.get_target_pc())
 
+@BCD.bc_dictionary_record_tag("jret")
 class BcRet(JBytecodeBase):
 
     def __init__(self,
@@ -611,6 +650,7 @@ class BcRet(JBytecodeBase):
 
     def __str__(self) -> str: return self.opcstr('ret')
 
+@BCD.bc_dictionary_record_tag("table")
 class BcTableSwitch(JBytecodeBase):
 
     def __init__(self,
@@ -622,6 +662,7 @@ class BcTableSwitch(JBytecodeBase):
 
     def __str__(self) -> str: return self.opcstr('switch')
 
+@BCD.bc_dictionary_record_tag("lookup")
 class BcLookupSwitch(JBytecodeBase):
 
     def __init__(self,
@@ -633,6 +674,7 @@ class BcLookupSwitch(JBytecodeBase):
 
     def __str__(self) -> str: return self.opcstr('lookup')
 
+@BCD.bc_dictionary_record_tag("new")
 class BcNew(JBytecodeBase):
 
     def __init__(self,
@@ -648,6 +690,7 @@ class BcNew(JBytecodeBase):
 
     def __str__(self) -> str: return self.opcstr('new') + str(self.get_class())
 
+@BCD.bc_dictionary_record_tag("newa")
 class BcNewArray(JBytecodeBase):
 
     def __init__(self,
@@ -657,7 +700,7 @@ class BcNewArray(JBytecodeBase):
             args: List[int]):
         JBytecodeBase.__init__(self,bcd,index,tags,args)
 
-    def get_type(self): return self.tpd.get_value_type(int(self.args[0]))
+    def get_type(self) -> "JValueTypeBase": return self.tpd.get_value_type(int(self.args[0]))
 
     def is_object_created(self) -> bool: return True
 
@@ -665,6 +708,7 @@ class BcNewArray(JBytecodeBase):
 
     def __str__(self) -> str: return self.opcstr('newarray') + str(self.get_type())
 
+@BCD.bc_dictionary_record_tag("mnewa")
 class BcAMultiNewArray(JBytecodeBase):
 
     def __init__(self,
@@ -674,7 +718,7 @@ class BcAMultiNewArray(JBytecodeBase):
             args: List[int]):
         JBytecodeBase.__init__(self,bcd,index,tags,args)
 
-    def get_type(self): return self.tpd.get_object_type(int(self.args[0]))
+    def get_type(self) -> "JObjectTypeBase": return self.tpd.get_object_type(int(self.args[0]))
 
     def get_size(self) -> int: return int(self.args[1])
 
@@ -687,6 +731,7 @@ class BcAMultiNewArray(JBytecodeBase):
     def __str__(self) -> str:
         return self.opcstr('multinewarray') + str(self.get_type()) + ', ' + str(self.get_size())
 
+@BCD.bc_dictionary_record_tag("ccast")
 class BcCheckCast(JBytecodeBase):
 
     def __init__(self,
@@ -696,10 +741,11 @@ class BcCheckCast(JBytecodeBase):
             args: List[int]):
         JBytecodeBase.__init__(self,bcd,index,tags,args)
 
-    def get_type(self): return self.tpd.get_object_type(int(self.args[0]))
+    def get_type(self) -> "JObjectTypeBase": return self.tpd.get_object_type(int(self.args[0]))
 
     def __str__(self) -> str: return self.opcstr('checkcast') + str(self.get_type())
 
+@BCD.bc_dictionary_record_tag("iof")
 class BcInstanceOf(JBytecodeBase):
 
     def __init__(self,
@@ -709,7 +755,7 @@ class BcInstanceOf(JBytecodeBase):
             args: List[int]):
         JBytecodeBase.__init__(self,bcd,index,tags,args)
 
-    def get_type(self): return self.tpd.get_object_type(int(self.args[0]))
+    def get_type(self) -> "JObjectTypeBase": return self.tpd.get_object_type(int(self.args[0]))
 
     def __str__(self) -> str: return self.opcstr('instanceof') + str(self.get_type())
 
@@ -724,9 +770,10 @@ class BcFieldBase(JBytecodeBase):
 
     def get_cn(self) -> "Classname": return self.jd.get_cn(int(self.args[0]))
 
-    def get_field(self): return self.tpd.get_field_signature_data(int(self.args[1]))
+    def get_field(self) -> "FieldSignature": return self.tpd.get_field_signature_data(int(self.args[1]))
 
 
+@BCD.bc_dictionary_record_tag("gets")
 class BcGetStatic(BcFieldBase):
 
     def __init__(self,
@@ -741,6 +788,7 @@ class BcGetStatic(BcFieldBase):
     def __str__(self) -> str:
         return self.opcstr('getstatic') + str(self.get_cn()) + '.' + str(self.get_field())
 
+@BCD.bc_dictionary_record_tag("puts")
 class BcPutStatic(BcFieldBase):
 
     def __init__(self,
@@ -756,6 +804,7 @@ class BcPutStatic(BcFieldBase):
         return self.opcstr('putstatic') + str(self.get_cn()) + '.' + str(self.get_field())
 
 
+@BCD.bc_dictionary_record_tag("getf")
 class BcGetField(BcFieldBase):
 
     def __init__(self,
@@ -771,6 +820,7 @@ class BcGetField(BcFieldBase):
         return self.opcstr('getfield') + str(self.get_cn()) + '.' + str(self.get_field())
 
 
+@BCD.bc_dictionary_record_tag("putf")
 class BcPutField(BcFieldBase):
 
     def __init__(self,
@@ -786,6 +836,7 @@ class BcPutField(BcFieldBase):
         return self.opcstr('putfield') + str(self.get_cn()) + '.' + str(self.get_field())
 
 
+@BCD.bc_dictionary_record_tag("ald")
 class BcArrayLoad(JBytecodeBase):
 
     def __init__(self,
@@ -800,6 +851,7 @@ class BcArrayLoad(JBytecodeBase):
     def __str__(self) -> str: return self.opcstr('arrayload') + str(self.get_type())
 
 
+@BCD.bc_dictionary_record_tag("ast")
 class BcArrayStore(JBytecodeBase):
 
     def __init__(self,
@@ -823,12 +875,13 @@ class BcInvokeBase(JBytecodeBase):
             args: List[int]):
         JBytecodeBase.__init__(self,bcd,index,tags,args)
 
-    def get_signature(self):
+    def get_signature(self) -> "MethodSignature":
         return self.tpd.get_method_signature_data(int(self.args[1]))
 
     def is_call(self) -> bool: return True
 
 
+@BCD.bc_dictionary_record_tag("invv")
 class BcInvokeVirtual(BcInvokeBase):
 
     def __init__(self,
@@ -838,11 +891,12 @@ class BcInvokeVirtual(BcInvokeBase):
             args: List[int]):
         BcInvokeBase.__init__(self,bcd,index,tags,args)
 
-    def get_object(self): return self.tpd.get_object_type(int(self.args[0]))
+    def get_object(self) -> "JObjectTypeBase": return self.tpd.get_object_type(int(self.args[0]))
 
     def __str__(self) -> str:
         return self.opcstr('invokevirtual') + str(self.get_object()) + '.' + str(self.get_signature())
 
+@BCD.bc_dictionary_record_tag("invsp")
 class BcInvokeSpecial(BcInvokeBase):
 
     def __init__(self,
@@ -857,6 +911,7 @@ class BcInvokeSpecial(BcInvokeBase):
     def __str__(self) -> str:
         return self.opcstr('invokespecial') + str(self.get_class()) + '.' + str(self.get_signature())
 
+@BCD.bc_dictionary_record_tag("invst")
 class BcInvokeStatic(BcInvokeBase):
 
     def __init__(self,
@@ -872,6 +927,7 @@ class BcInvokeStatic(BcInvokeBase):
         return self.opcstr('invokestatic') + str(self.get_class()) + '.' + str(self.get_signature())
 
 
+@BCD.bc_dictionary_record_tag("invi")
 class BcInvokeInterface(BcInvokeBase):
 
     def __init__(self,
@@ -886,6 +942,7 @@ class BcInvokeInterface(BcInvokeBase):
     def __str__(self) -> str:
         return self.opcstr('invokeinterface') + str(self.get_class()) + '.' + str(self.get_signature())
 
+@BCD.bc_dictionary_record_tag("invd")
 class BcInvokeDynamic(BcInvokeBase):
 
     def __init__(self,
@@ -898,6 +955,7 @@ class BcInvokeDynamic(BcInvokeBase):
     def __str__(self) -> str:
         return self.opcstr('invokedynamic') + str(self.get_signature())
 
+@BCD.bc_dictionary_record_tag("ret")
 class BcReturn(JBytecodeBase):
 
     def __init__(self,

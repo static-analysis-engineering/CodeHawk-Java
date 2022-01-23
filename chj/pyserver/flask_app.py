@@ -54,6 +54,10 @@ from chj.reporting.TaintOrigins import TaintOrigins
 
 from typing import Any, Dict, List, Tuple, Union, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from chj.app.JavaClass import JavaClass
+    from chj.app.JavaMethod import JavaMethod
+
 # ======================================================================
 # Rest API
 # ======================================================================
@@ -61,7 +65,7 @@ from typing import Any, Dict, List, Tuple, Union, TYPE_CHECKING
 app = Flask(__name__)
 
 @app.route('/')
-def index():
+def index() -> str:
     return render_template('index.html')
 
 @app.route('/loadprojects')
@@ -158,7 +162,7 @@ def loadproject(engagement: str, project: str) -> Response:
     try:
         app = load_engagement_app(engagement, project)
         classes = {}
-        def f(myclass):
+        def f(myclass: "JavaClass") -> None:
             classes[myclass.get_name()] = str(myclass.cnix)
         app.iter_classes(f)
     except Exception as e:
@@ -235,7 +239,7 @@ def loadreflective(engagement: str, project: str) -> Response:
         ] 
 
         methods = []
-        def f(cmsix,m):
+        def f(cmsix: int, m: "JavaMethod") -> None:
             for n in reflective_names:
                 methods.append((cmsix,m.get_named_method_calls(n)))
         app.iter_methods(f)
@@ -607,6 +611,7 @@ def mk_method_code_table(f: List[List[str]]) -> ET.Element:
     table.append(mt)
     return table
 
+"""
 def mk_display_body(mk_table, report):
     body = ET.Element('body')
     mainpage = ET.Element('div')
@@ -627,4 +632,4 @@ def mk_display_body(mk_table, report):
     mainpage.extend([ header, nav, codetable, footer ])
     body.append(mainpage)
     return body
-
+"""
