@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,9 +28,17 @@
 
 from chj.libsum.SummaryValueType import SummaryValueType
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import xml.etree.ElementTree as ET
+    from chj.libsum.MethodSummary import MethodSummary
+
 class MethodSummarySignature(object):
 
-    def __init__(self,methodsum,xnode):
+    def __init__(self,
+            methodsum: "MethodSummary",
+            xnode: "ET.Element"):
         self.methodsum = methodsum
         self.xnode = xnode
         self.argtypes = [ SummaryValueType(x) for x in self.xnode.findall('arg') ]
@@ -39,7 +48,7 @@ class MethodSummarySignature(object):
             self.returntype = SummaryValueType(xreturn)
         
 
-    def __str__(self):
+    def __str__(self) -> str:
         sreturn = 'V' if self.returntype is None else str(self.returntype)
         return '(' + ''.join( [ str(t) for t in self.argtypes ]) + ')' + sreturn
         

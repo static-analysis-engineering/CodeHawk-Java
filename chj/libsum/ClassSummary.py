@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,28 +28,36 @@
 
 import chj.libsum.MethodSummary as MS
 
+from typing import Callable, Dict, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.libsum.JDKModels import JDKModels
+    import xml.etree.ElementTree as ET
+
 class ClassSummary(object):
 
-    def __init__(self,jdkmodels,xnode):
+    def __init__(self, jdkmodels: "JDKModels", xnode: "ET.Element"):
         self.jdkmodels = jdkmodels
         self.xnode = xnode
         self.name = self.xnode.get('name')
         self.package = self.xnode.get('package')
-        self.summaries = {}    # (name,signature-string) -> JMethodSummary
+        self.summaries: Dict[Tuple[str, str], MS.MethodSummary] = {}        # (name,signature-string) -> JMethodSummary
         self._initialize()
 
-    def iter_method_summaries(self,f):
+    def iter_method_summaries(self,f:Callable[[str, str, MS.MethodSummary], None]) -> None:
         for (name,ms) in self.summaries: f(name,ms,self.summaries[(name,ms)])
 
-    def _initialize(self):
+    def _initialize(self) -> None:
         xconstructors = self.xnode.find('constructors')
         if not xconstructors is None:
-            for xm in self.xnode.find('constructors').findall('constructor'):
+            for xm in xconstructors.findall('constructor'):
                 c = MS.ConstructorSummary(self,xm)
                 self.summaries[ (c.get_name(), str(c.get_signature())) ] = c
-        for xm in self.xnode.find('methods').findall('method'):
-            m = MS.MethodSummary(self,xm)
-            self.summaries[ (m.get_name(), str(m.get_signature())) ] = m
+        xmethods = self.xnode.find('methods')
+        if not xmethods is None:
+            for xm in xmethods.findall('method'):
+                m = MS.MethodSummary(self,xm)
+                self.summaries[ (m.get_name(), str(m.get_signature())) ] = m
         
 
 

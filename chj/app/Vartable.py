@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,46 +26,96 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+import chj.util.fileutil as UF
+
+from typing import Dict, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.app.JavaMethod import JavaMethod
+    from chj.index.JType import StringConstant
+    from chj.index.JValueTypes import JValueTypeBase
+    import xml.etree.ElementTree as ET
 
 class VartableSlot():
 
-    def __init__(self,vartable,xnode):
+    def __init__(self,
+            vartable: "Vartable",
+            xnode: "ET.Element"):
         self.jd = vartable.jd
+        self.xnode = xnode
         self.tpd  = self.jd.tpd           # JTypeDictionary
         self.vartable = vartable
-        self.name = self.tpd.get_string(int(xnode.get('iname')))
+        self.name = self._name
         self.namelen = self.name.get_string_length()
-        self.vix = int(xnode.get('vix'))
-        self.vtype = self.tpd.get_value_type(int(xnode.get('ivty')))
-        self.startpc = int(xnode.get('spc'))
-        self.endpc = int(xnode.get('epc'))
 
-    def to_string(self,namelen):
+    @property
+    def _name(self) -> "StringConstant":
+        name = self.xnode.get('iname')
+        if name is not None:
+            return self.tpd.get_string(int(name))
+        else:
+            raise UF.CHJError('iname missing for xml of vartable of method ' + self.vartable.jmethod.get_qname())
+
+    @property
+    def vtype(self) -> "JValueTypeBase":
+        vtype = self.xnode.get('ivty')
+        if vtype is not None:
+            return self.tpd.get_value_type(int(vtype))
+        else:
+            raise UF.CHJError('ivty missing for xml of vartable of method ' + self.vartable.jmethod.get_qname())
+
+    @property
+    def vix(self) -> int:
+        vix = self.xnode.get('vix')
+        if vix is not None:
+            return int(vix)
+        else:
+            raise UF.CHJError('vix missing for xml of vartable of method ' + self.vartable.jmethod.get_qname())
+
+    @property
+    def startpc(self) -> int:
+        startpc = self.xnode.get('spc')
+        if startpc is not None:
+            return int(startpc)
+        else:
+            raise UF.CHJError('spc missing for xml of vartable of method ' + self.vartable.jmethod.get_qname())
+
+    @property
+    def endpc(self) -> int:
+        endpc = self.xnode.get('epc')
+        if endpc is not None:
+            return int(endpc)
+        else:
+            raise UF.CHJError('endpc missing for xml of vartable of method ' + self.vartable.jmethod.get_qname())
+
+    def to_string(self, namelen: int) -> str:
         return (str(self.vix) + ' ' + str(self.name).ljust(namelen) + ' '
                     + str(self.startpc).rjust(5) + ' ' + str(self.endpc).rjust(5))
     
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.vix) + ' ' + str(self.name) + ' ' + str(self.startpc) + ' ' + str(self.endpc)
 
 
 class Vartable():
     '''Variable table (only available if compiled with debug).'''
 
-    def __init__(self,jmethod,xnode):
+    def __init__(self,
+            jmethod: "JavaMethod",
+            xnode: "ET.Element"):
         self.jmethod = jmethod           # JavaMethod
         self.jd = jmethod.jd             # DataDictionary
         self.xnode = xnode
-        self.table = {}                  # (index,startpc) -> VartableSlot
+        self.table: Dict[Tuple[int, int], VartableSlot] = {}                  # (index,startpc) -> VartableSlot
         self._initializetable()
         
-    def getparameters(self):
+    def getparameters(self) -> Dict[int, VartableSlot]:
         '''a variable is a parameter if its start pc equals 0.'''
         result = {}
         for (ix,sp) in self.table:
             if sp == 0: result[ix] = self.table[(ix,sp)]
         return result
 
-    def __str__(self):
+    def __str__(self) -> str:
         lines = []
         lines.append('Variable table')
         lines.append('-' * 64)
@@ -75,12 +126,15 @@ class Vartable():
         lines.append('-' * 64)
         return '\n'.join(lines)
 
-    def get_name(self,index,pc):
+    def get_name(self, index: int, pc: int) -> str:
         for (ix,spc) in self.table:
             if ix == index and pc >= spc and pc <= self.table[(ix,spc)].endpc:
-                return self.table[(ix,spc)].name
+                return self.table[(ix,spc)].name.get_string()
+        raise UF.CHJError("Could not find name for ix: " + str(ix) + " and spc: " + str(spc) + " in Vartable")
 
-    def _initializetable(self):
+    def _initializetable(self) -> None:
         for s in self.xnode.findall('slot'):
-            index = (int(s.get('vix')),int(s.get('spc')))
+            vix = UF.safe_get(s, 'vix', 'vix missing from xml for slot of method ' + self.jmethod.get_qname(), int)
+            spc = UF.safe_get(s, 'spc', 'spc missing from xml for slot of method ' + self.jmethod.get_qname(), int)
+            index = (vix, spc)
             self.table[index] = VartableSlot(self,s)

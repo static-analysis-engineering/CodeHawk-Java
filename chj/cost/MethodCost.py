@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,60 +26,81 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
-from chj.cost.BlockCost import BlockCost
 from chj.cost.CostMeasure import CostMeasure
 from chj.cost.SideChannelCheck import SideChannelCheck
 from chj.cost.LoopCost import LoopCost
 
-class MethodCost ():
+import chj.util.fileutil as UF
 
-    def __init__(self,costmodel,xnode):
-        self.costmodel = costmodel                 # CostModel
+from typing import Dict, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import xml.etree.ElementTree as ET
+    from chj.app.JavaMethod import JavaMethod
+    from chj.index.JTermDictionary import JTermDictionary
+    from chj.cost.CostModel import CostModel
+    from collections.abc import ValuesView
+    from collections.abc import ItemsView
+
+class MethodCost():
+
+    def __init__(self, costmodel:"CostModel", xnode:"ET.Element"):
+        self.costmodel = costmodel                              # CostModel
         self.xnode = xnode
-        self.app = self.costmodel.app              # AppAccess
-        self.jtd = self.app.jd.jtd                 # JTermDictionary
-        self.cmsix = int(self.xnode.get('cmsix'))
-        self.blocks = {}            # pc -> CostMeasure
-        self.loops = {}             # pc -> LoopCost
-        self.sidechannelchecks = [] # SideChannelCheck list
+        self.app = self.costmodel.app                           # AppAccess
+        self.jtd: "JTermDictionary" = self.app.jd.jtd           # JTermDictionary
+        self.blocks: Dict[int, CostMeasure] = {}                # pc -> CostMeasure
+        self.loops: Dict[int, LoopCost] = {}                    # pc -> LoopCost
+        self.sidechannelchecks: List[SideChannelCheck] = []     # SideChannelCheck list
         self.methodcost = CostMeasure (
-            self,self.jtd.get_jterm_range(int(self.xnode.get('imcost'))))
+            self,self.jtd.get_jterm_range(UF.safe_get(self.xnode, 'imcost', 'imcost missing from xml', int)))
         self._initialize()
 
-    def get_method(self): return self.app.get_method(self.cmsix)
+    @property
+    def cmsix(self) -> int:
+        cmsix = self.xnode.get('cmsix')
+        if cmsix is None:
+            raise UF.CHJError("cmsix missing from xml")
+        else:
+            return int(cmsix)
 
-    def get_qname(self):
+    def get_method(self) -> "JavaMethod": return self.app.get_method(self.cmsix)
+
+    def get_qname(self) -> str:
         return self.costmodel.jd.get_cms(self.cmsix).get_qname()
 
-    def get_name(self):
+    def get_name(self) -> str:
         return self.costmodel.jd.get_cms(self.cmsix).methodname
 
-    def get_block_costs(self): return self.blocks.items()
+    def get_block_costs(self) -> "ItemsView[int, CostMeasure]": return self.blocks.items()
 
-    def get_block_cost(self,pc):
-        if pc in self.blocks: return self.blocks[pc]
+    def get_block_cost(self, pc: int) -> CostMeasure:
+        if pc in self.blocks: 
+            return self.blocks[pc]
+        else:
+            raise UF.CHJError('Block cost at : ' + str(pc) + ' missing from xml')
 
-    def get_simplified_block_cost(self,pc):
+    def get_simplified_block_cost(self, pc:int) -> str:
         cost = self.blocks[pc].cost
         if cost.is_value() or cost.is_range() or cost.is_top():
             return str(cost)
         else:
             return "X"
 
-    def has_sidechannel_checks(self): return len(self.sidechannelchecks) > 0
+    def has_sidechannel_checks(self) -> bool: return len(self.sidechannelchecks) > 0
 
-    def get_loop_costs(self): return self.loops.values()
+    def get_loop_costs(self) -> "ValuesView[LoopCost]" : return self.loops.values()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (str(self.methodcost).ljust(60) + self.get_name() + ' (' +
                 str(self.cmsix) + ')')
 
-    def _initialize(self):
+    def _initialize(self) -> None:
         xblocks = self.xnode.find('blocks')
         if not xblocks is None:
             for b in xblocks.findall('block'):
-                pc = int(b.get('pc'))
-                jtrange = self.jtd.get_jterm_range(int(b.get('ibcost')))
+                pc = UF.safe_get(b, 'pc', 'pc missing from xml', int)
+                jtrange = self.jtd.get_jterm_range(UF.safe_get(b, 'ibcost', 'ibcost missing from xml', int))
                 bcost = CostMeasure(self,jtrange)
                 self.blocks[pc] = bcost
         xscchecks = self.xnode.find('sidechannel-checks')
@@ -87,8 +109,8 @@ class MethodCost ():
                 self.sidechannelchecks.append(SideChannelCheck(self, sc))
         xloops = self.xnode.find('loops')
         if not xloops is None:
-            for l in self.xnode.find('loops').findall('loop'):
-                pc = int(l.get('hpc'))
+            for l in UF.safe_find(self.xnode, 'loops', 'loops missing from xml').findall('loop'):
+                pc = UF.safe_get(l, 'hpc', 'hpc missing from xml', int)
                 lc = LoopCost(self,l)
                 self.loops[pc] = lc
                 

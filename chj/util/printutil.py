@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +28,9 @@
 
 import datetime
 
-def cjust(s,l):
+from typing import Any
+
+def cjust(s: str, l: int) -> str:
     s = str(s)
     length = len(s)
     if length >= l: return s
@@ -35,7 +38,7 @@ def cjust(s,l):
     suflen = l - (length + prelen)
     return ((' ' * prelen) + s + (' ' * suflen))
 
-def reportheader(title,application):
+def reportheader(title: str, application: str) -> str:
     lines = []
     lines.append('* ' + ('=' * 80))
     lines.append('* CodeHawk Java Analyzer: ' + title)

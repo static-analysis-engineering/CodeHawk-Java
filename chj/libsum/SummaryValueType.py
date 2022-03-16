@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +26,12 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+import chj.util.fileutil as UF
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import xml.etree.ElementTree as ET
 
 basic_type_symbols = {
     "boolean": "Z",
@@ -40,23 +47,28 @@ basic_type_symbols = {
 
 class SummaryValueType(object):
 
-    def __init__(self,xnode):
+    def __init__(self, xnode: "ET.Element") -> None:
         self.xnode = xnode
 
-    def is_object(self):
+    def is_object(self) -> bool:
         return self.xnode[0].tag == 'object' or self.xnode[0].tag == 'new-object'
 
-    def is_array(self):
+    def is_array(self) -> bool:
         return self.xnode[0].tag == 'array'
 
-    def get_array_element_type(self):
-        return SummaryValueType(self.xnode.find('array'))
+    def get_array_element_type(self) -> "SummaryValueType":
+        return SummaryValueType(UF.safe_find(self.xnode, 'array', 'array missing from summaryvaluetype xml'))
 
-    def is_basic_type(self): return not (self.is_object() or self.is_array())
+    def is_basic_type(self) -> bool: 
+        return not (self.is_object() or self.is_array())
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.is_object():
-            cname = self.xnode[0].text.replace('.','/')
+            xtext = self.xnode[0].text
+            if xtext is not None:
+                cname = xtext.replace('.','/')
+            else:
+                raise UF.CHJError('summary value missing from xml')
             return 'L' + cname + ';'
         if self.is_array():
             return '[' + str(self.get_array_element_type())

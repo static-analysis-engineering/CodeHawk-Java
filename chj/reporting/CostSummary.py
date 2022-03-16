@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +25,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # ------------------------------------------------------------------------------
+
+from typing import Any, Callable, Dict, List, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.cost.MethodCost import MethodCost
+
+if TYPE_CHECKING:
+    from chj.app.JavaMethod import JavaMethod
+    from chj.index.AppAccess import AppAccess
+    from chj.index.DataDictionary import DataDictionary
+    from chj.index.MethodSignature import ClassMethodSignature
+    from chj.cost.CostModel import CostModel
+    from chj.cost.CostMeasure import CostMeasure
+    from chj.cost.MethodCost import MethodCost
 
 abbreviations = [
     ('com.cyberpointllc.stac.easydecision', 'ccse'),
@@ -45,22 +60,22 @@ abbreviations = [
     ]
 
 
-def abbreviatepackages(s):
+def abbreviatepackages(s: str) -> str:
     for (k,t) in abbreviations:
         s = s.replace(k,t)
     return s
 
 class CostSummary(object):
 
-    def __init__(self,app):
+    def __init__(self, app: "AppAccess"):
         self.app = app                  # AppAccess
-        self.jd = self.app.jd           # DataDictionary
-        self.costmodel = app.get_costmodel()
-        self.constantcost = []
+        self.jd: "DataDictionary" = self.app.jd           # DataDictionary
+        self.costmodel: "CostModel" = app.get_costmodel()
+        self.constantcost: List[int] = []
 
-    def get_cms(self,cmsix): return self.jd.get_cms(cmsix)
+    def get_cms(self, cmsix: int) -> "ClassMethodSignature": return self.jd.get_cms(cmsix)
 
-    def get_range_cost_string(self):
+    def get_range_cost_string(self) -> str:
         lines = []
         for (cmsix,(lb,ub)) in self.costmodel.get_range_method_costs():
             lines.append('[' + str(lb).rjust(8) + ' ; ' + str(ub).rjust(8) + ']  '
@@ -68,7 +83,7 @@ class CostSummary(object):
                              + ' (' + str(cmsix) + ')' )
         return '\n'.join(lines)
 
-    def get_ranked_range_cost_string(self):
+    def get_ranked_range_cost_string(self) -> str:
         '''ranked by ratio between lower bound and upper bound'''
         lines = []
         costs = self.costmodel.get_range_method_costs()
@@ -84,7 +99,7 @@ class CostSummary(object):
                               + ' (' + str(cmsix) + ')')
         return '\n'.join(lines)
 
-    def get_ranked_range_cost_dict(self):
+    def get_ranked_range_cost_dict(self) -> Dict[int, Tuple[str, str, str]]:
         cost_dict = {}
         costs = self.costmodel.get_range_method_costs()
 
@@ -97,21 +112,25 @@ class CostSummary(object):
             cost_dict[cmsix] = (name, str(lb), str(ub))
         return cost_dict
 
-    def has_calls(self,cmsix): return self.app.get_method(cmsix).has_calls()
+    def has_calls(self, cmsix: int) -> bool:
+        return self.app.get_method(cmsix).has_calls()
 
-    def get_call_targets(self,cmsix): return self.app.get_method(cmsix).get_callee_cmsixs()
+    def get_call_targets(self, cmsix: int) -> List[int]:
+        return self.app.get_method(cmsix).get_callee_cmsixs()
 
-    def as_dictionary(self):      
-        costs = {}
+    def as_dictionary(self) -> Dict[str, Dict[int, Any]]:
+        costs: Dict[str, Dict[int, Any]] = {}
 
         topmethodcosts = self.costmodel.get_top_method_costs()
-        costs['topcosts'] = topcosts = {}
+        costs['topcosts'] = {}
+        topcosts = costs['topcosts']
         for cmsix in topmethodcosts:
             name = str(self.get_cms(cmsix)) + ' (' + str(cmsix) + ')'
             topcosts[cmsix] = (name, 'Top')
 
         constantmethodcosts = self.costmodel.get_constant_method_costs()
-        costs['constantcosts'] = constantcosts = {}
+        costs['constantcosts'] = {}
+        constantcosts = costs['constantcosts']
         for (cmsix,cost) in constantmethodcosts:
             name = str(self.get_cms(cmsix)) + ' (' + str(cmsix) + ')'
             if (not self.has_calls(cmsix)):
@@ -131,7 +150,9 @@ class CostSummary(object):
         return costs
 
 
-    def to_string(self,allcosts=True,namefilter=(lambda name:True)):
+    def to_string(self,
+            allcosts: bool=True, 
+            namefilter: Callable[[str], bool]=(lambda name:True)) -> str:
         lines = []
 
         topmethodcosts = self.costmodel.get_top_method_costs()
@@ -162,18 +183,18 @@ class CostSummary(object):
         lines.append(self.get_ranked_range_cost_string())
 
         if allcosts:
-            symbolicdeps = {}
-            multipledeps = {}
+            symbolicdeps: Dict[int, int] = {}
+            multipledeps: Dict[str, int] = {}
             symboliccosts = self.costmodel.get_symbolic_method_costs()
             lines.append('\n\nSymbolic cost expressions: ' + str(len(symboliccosts)))
-            for (cmsix,cost) in symboliccosts:
+            for (cmsix, symcost) in symboliccosts:
                 name = str(self.get_cms(cmsix))
                 if namefilter(name):
                     lines.append('\n' + str(self.get_cms(cmsix))
                                     + ' (' + str(cmsix) + ')')
-                    lines.append('   ' + str(cost))
+                    lines.append('   ' + str(symcost))
                     lines.append('symbolic dependencies:')
-                    for j in cost.get_ub_symbolic_dependencies():
+                    for j in symcost.get_ub_symbolic_dependencies():
                         depsname = j.get_name().split('_')
                         symbolicname = ''
                         symboliccost = '?'
@@ -182,7 +203,7 @@ class CostSummary(object):
                             if not cmsix in symbolicdeps: symbolicdeps[cmsix] = 0
                             symbolicdeps[cmsix] += 1
                             symbolicname = str(self.jd.get_cms(cmsix))
-                            symboliccost = self.costmodel.get_method_cost(cmsix)
+                            #symboliccost = str(self.costmodel.get_method_cost(cmsix))
                         elif len(depsname) > 2 and not 'lc' in depsname and 'pc' in depsname:
                             jname = '_'.join(j.get_name().split('_')[:-2])
                             multipledeps.setdefault(jname,0)
@@ -206,9 +227,9 @@ class CostSummary(object):
             lines.append('\nAmbiguity in method resolution ('
                              + str(len(multipledeps)) + ', '
                              + str(affected) + ')')
-            for j in sorted(multipledeps):
-                depsname = j.split('_')
-                lines.append(j + ' (' + str(multipledeps[j]) + ')')
+            for h in sorted(multipledeps):
+                depsname = h.split('_')
+                lines.append(h + ' (' + str(multipledeps[h]) + ')')
                 for d in depsname[1:]:
                     if d in  [ 'funcall', 'no', 'callees', '', 'pc' ]:
                         continue
@@ -221,11 +242,11 @@ class CostSummary(object):
         sclines = [ abbreviatepackages(s) for s in lines ]
         return '\n'.join(sclines)
 
-    def to_verbose_string(self,namefilter=(lambda name:True)):
+    def to_verbose_string(self, namefilter: Callable[[str], bool]=(lambda name:True)) -> str:
         lines = []
         lines.append('\n\nMethods')
         lines.append('-' * 80)
-        def f(mc):
+        def f(mc: "MethodCost") -> None:
             name = str(self.get_cms(mc.cmsix))
             if not namefilter(name): return
             if mc.methodcost.is_value(): return
@@ -236,10 +257,10 @@ class CostSummary(object):
         self.costmodel.iter(f)
         return '\n'.join(lines)
 
-    def to_loop_bounds_string(self):
-        result = {}
+    def to_loop_bounds_string(self) -> str:
+        result: Dict[int, Dict[int, Tuple["CostMeasure", "CostMeasure"]]] = {}
         lines = []
-        def f(mc):
+        def f(mc: "MethodCost") -> None:
             loopcosts = mc.get_loop_costs()
             if len(loopcosts) > 0:
                 for l in loopcosts:
@@ -256,9 +277,9 @@ class CostSummary(object):
                 lines.append('   n-it: ' + str(num))
         return '\n'.join(lines)
 
-    def to_side_channels_string(self):
+    def to_side_channels_string(self) -> str:
         lines = []
-        def f(mc):
+        def f(mc: "MethodCost") -> None:
             if mc.has_sidechannel_checks():
                 lines.append('\n' + mc.get_qname() + ' (' + str(mc.cmsix) + ')')
                 for sc in mc.sidechannelchecks:

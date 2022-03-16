@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,26 +28,34 @@
 import datetime
 import xml.etree.ElementTree as ET
 
+from typing import List, Dict, Any, Optional
+
 replacements = [ ('&', '&amp;'), ('<','&lt;'), ('>','&gt;'),
                  ('"','&quot;'), ('\'','&apos;') ]
 
 
-def sanitizestring(s):
+def sanitizestring(s: str) -> str:
     for (a,b) in replacements:
         s = s.replace(a,b)
     return s
     # return s
 
-def getixs(xnode):
+def getixs(xnode: ET.Element) -> List[int]:
+    ixs: Optional[str];
     if 'ixs' in xnode.attrib:
-        return [ int(x) for x in xnode.get('ixs').split(',') ]
+        ixs = xnode.get('ixs')
+        assert ixs is not None;
+        result = [ int(x) for x in ixs.split(',') ]
     else:
         result = []
         for ixl in xnode.findall('ix-list'):
-            result.extend( [ int(x) for x in ixl.get('ixs').split(',') ] )
+            ixs = ixl.get('ixs')
+            assert ixs is not None;
+            result.extend( [ int(x) for x in ixs.split(',') ] )
+    return result
 
 
-def attributes_to_pretty (attr,indent=0): 
+def attributes_to_pretty(attr: Dict[str, str],indent: int=0) -> str:
     if len(attr) == 0:
         return ''
     if len(attr) > 4:
@@ -59,7 +68,7 @@ def attributes_to_pretty (attr,indent=0):
         return (' ' + ' '.join(key + '="' + sanitizestring(attr[key]) + '"' 
                                for key in sorted(attr)))
 
-def element_to_pretty (e,indent=0):
+def element_to_pretty(e: ET.Element, indent: int=0) -> List[str]:
     lines = []
     attrs = attributes_to_pretty(e.attrib,indent)
     ind = ' ' * indent
@@ -78,12 +87,12 @@ def element_to_pretty (e,indent=0):
         lines.append(ind + '<' + e.tag + attrs + '>' + e.text + '</' + e.tag + '>\n')
         return lines
                         
-def doc_to_pretty (t):
+def doc_to_pretty(t: ET.ElementTree) -> str:
     lines = [ '<?xml version="1.0" encoding="UTF-8"?>\n' ]
     lines.extend(element_to_pretty(t.getroot()))
     return ''.join(lines)
 
-def get_xml_header(info):
+def get_xml_header(info: str) -> ET.Element:
     root = ET.Element('codehawk-java-analyzer')
     tree = ET.ElementTree(root)
     header = ET.Element('header')
@@ -92,7 +101,7 @@ def get_xml_header(info):
     root.append(header)
     return root
 
-def dict_to_xmlpretty(d,dtag,etag,kname,vname):
+def dict_to_xmlpretty(d: Dict[str, Any], dtag: str, etag: str, kname: str,vname: str) -> str:
     root = ET.Element('codehawk-java-analyzer')
     tree = ET.ElementTree(root)
     dnode = ET.Element(dtag)
@@ -105,7 +114,7 @@ def dict_to_xmlpretty(d,dtag,etag,kname,vname):
     return(doc_to_pretty(tree))
 
 
-def create_user_class_xnode(package,name):
+def create_user_class_xnode(package: str, name: str) -> ET.Element:
     root = get_xml_header('class')
     cnode = ET.Element('class')
     cnode.set('name',name)
@@ -116,7 +125,7 @@ def create_user_class_xnode(package,name):
     root.append(cnode)
     return root
 
-def get_flask_html_header(titletext):
+def get_flask_html_header(titletext: str) -> ET.Element:
     head = ET.Element('head')
     meta = ET.Element('meta')
     meta.set('charset','utf-8')
@@ -135,7 +144,7 @@ def get_flask_html_header(titletext):
     return head
 
 
-def html_to_pretty (body,title):
+def html_to_pretty (body: ET.Element ,title: str) -> str:
     lines = [ '<!DOCTYPE HTML PUBLIC>' ]
     root = ET.Element('html')
     root.append(get_flask_html_header(title))

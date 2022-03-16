@@ -1,10 +1,10 @@
 # ------------------------------------------------------------------------------
 # CodeHawk Java Analyzer
-# Author: Henny Sipma
+# Author: Andrew McGraw
 # ------------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -15,7 +15,7 @@
 #
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,43 +24,44 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # ------------------------------------------------------------------------------
-"""Parses an Engagement application and translates it to CHIF."""
 
-import argparse
-import os
-import subprocess
+import chj.util.IndexedTable as IT
 
-from chj.util.Config import Config
+from typing import cast, Dict, Callable, List, Type, TypeVar, Tuple, TYPE_CHECKING
 
-import chj.cmdline.AnalysisManager as AM
-import chj.util.fileutil as UF
+if TYPE_CHECKING:
+    from chj.index.JTypeDictionary import JTypeDictionary
 
-def parse():
-    usage = ('invoke with the name of an Engagement application, e.g., blogger')
-    parser = argparse.ArgumentParser(usage=usage,description=__doc__)
-    parser.add_argument('appname',help='name of engagement application')
-    parser.add_argument('--verbose',action='store_true',
-                            help='show list of classes')
-    args = parser.parse_args()
-    return args
+class JTypeDictionaryRecord(IT.IndexedTableValue):
+    def __init__(
+        self,
+        jtd: "JTypeDictionary",
+        index: int,
+        tags: List[str],
+        args: List[int]
+    ) -> None:
+        self.jtd = jtd
+        self.index = index
+        self.tags = tags
+        self.args = args
 
-if __name__ == '__main__':
+__j_dictionary_record_types: Dict[Tuple[type, str], Type[JTypeDictionaryRecord]] = {}
+JDiR = TypeVar('JDiR', bound=JTypeDictionaryRecord, covariant=True)
 
-    args = parse()
+def j_dictionary_record_tag(tag_name: str) -> Callable[[Type[JDiR]], Type[JDiR]]:
+    def handler(t: Type[JDiR]) -> Type[JDiR]:
+        __j_dictionary_record_types[(t.__bases__[0], tag_name)] = t
+        return t
+    return handler
 
-    try:
-        UF.check_analyzer()
-        (path,jars) = UF.get_engagement_app_jars(args.appname)
-        UF.remove_analysis_dir(path)
-    except UF.CHJError as e:
-        print(str(e.wrap()))
-        exit(1)
-
-    pkg_excludes = UF.get_engagement_app_excludes(args.appname)
-    dependencies = UF.get_engagement_app_dependencies(args.appname)
-
-    am = AM.AnalysisManager(path,jars,dependencies=dependencies,excludes=pkg_excludes)
-    try:
-        result = am.translate_only()
-    except UF.CHJError as e:
-        print(str(e.wrap()))
+def construct_j_dictionary_record(
+    jtd: "JTypeDictionary",
+    index: int,
+    tags: List[str],
+    args: List[int],
+    superclass: Type[JDiR]
+) -> JDiR:
+    if (superclass, tags[0]) not in __j_dictionary_record_types:
+        raise Exception("unknown type: " + tags[0])
+    instance = __j_dictionary_record_types[(superclass, tags[0])](jtd, index, tags, args)
+    return cast(JDiR, instance)

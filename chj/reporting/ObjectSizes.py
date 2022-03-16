@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,16 +26,21 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.app.JavaClass import JavaClass
+    from chj.index.AppAccess import AppAccess
 
 class ObjectSizes():
 
-    def __init__(self,app):
+    def __init__(self, app: "AppAccess"):
         self.app = app
         self.jd = app.jd
 
-    def to_string(self):
+    def to_string(self) -> str:
         result = []
-        def f(c): result.append((c,c.get_object_size()))
+        def f(c: "JavaClass") -> None: result.append((c,c.get_object_size()))
         self.app.iter_classes(f)
 
         lines = []
@@ -49,5 +55,4 @@ class ObjectSizes():
             if nArrays > 0:
                 lines.append('  arrays     : ' + str(nArrays))
             lines.append(' ')
-        return '\n'.join(lines)
-                             
+        return '\n'.join(lines) 

@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,18 +26,25 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import Dict, Tuple
+
 #Dot specifies that " (double quotes) must be escaped
 replacements = [ ('"', '\\"') ,
                      ('<init>', '\<init\>') ]
 
-def sanitize(s):
+def sanitize(s: str) -> str:
     for (a,b) in replacements:
         s = s.replace(a,b)
     return s
 
 class DotNode(object):
 
-    def __init__(self,name,labeltxt=None,color=None,fillcolor=None,shaded=False):
+    def __init__(self,
+        name: str,
+        labeltxt: str=None,
+        color: str=None,
+        fillcolor: str=None,
+        shaded: bool=False):
         self.name = name
         self.labeltxt = labeltxt
         self.shaded = shaded
@@ -44,12 +52,12 @@ class DotNode(object):
         self.fillcolor = fillcolor
         self.addquotes = True
 
-    def set_label(self,s): self.label = sanitize(s)
-    def set_color(self,c): self.color = c
-    def set_fillcolor(self,c): self.fillcolor = c
-    def set_shaded(self): self.shaded = True
+    def set_label(self, s:str) -> None: self.labeltxt = sanitize(s)
+    def set_color(self, c:str) -> None: self.color = c
+    def set_fillcolor(self, c:str) -> None: self.fillcolor = c
+    def set_shaded(self) -> None: self.shaded = True
 
-    def __str__(self):
+    def __str__(self) -> str:
         quote = '"' if self.addquotes else ''
         if self.labeltxt is None:
             labeltxt = ''
@@ -72,16 +80,19 @@ class DotNode(object):
 
 class DotEdge(object):
 
-    def __init__(self,src,tgt,labeltxt=None):
+    def __init__(self,
+            src: str,
+            tgt: str,
+            labeltxt: str=None):
         self.src = src
         self.tgt = tgt
         self.bidirectional = False
         self.labeltxt = labeltxt
         self.addquotes = True
 
-    def set_label(self,s): self.label = s
+    def set_label(self,s:str) -> None: self.labeltxt = s
 
-    def __str__(self):
+    def __str__(self) -> str:
         quote = '"' if self.addquotes else ''
         if self.labeltxt is None:
             attrs = ''
@@ -92,28 +103,36 @@ class DotEdge(object):
 
 class DotGraph(object):
 
-    def __init__(self,name):
+    def __init__(self,name: str) -> None:
         self.name = name
-        self.nodes = {}
-        self.edges = {}
+        self.nodes: Dict[str, DotNode] = {}
+        self.edges: Dict[Tuple[str, str], DotEdge] = {}
         self.rankdir = 'TB'
         self.bgcolor = 'gray96'
 
-    def add_node(self,name,labeltxt=None,shaded=False,color=None,fillcolor=None):
+    def add_node(self,
+        name: str,
+        labeltxt: str=None,
+        shaded: bool=False,
+        color: str=None,
+        fillcolor: str=None) -> None:
         if not name in self.nodes:
             if not labeltxt is None: labeltxt = sanitize(labeltxt)
             self.nodes[name] = DotNode(name,labeltxt=labeltxt,shaded=shaded,color=color,fillcolor=fillcolor)
 
-    def add_edge(self,src,tgt,labeltxt=None):
+    def add_edge(self,
+            src: str,
+            tgt: str,
+            labeltxt: str=None) -> None:
         self.add_node(src)
         self.add_node(tgt)
         if not (src,tgt) in self.edges:
             if not labeltxt is None: labeltxt = sanitize(labeltxt)
             self.edges[(src,tgt)] = DotEdge(src,tgt,labeltxt)
 
-    def set_top_bottom(self): self.rankdir = 'TB'
+    def set_top_bottom(self) -> None: self.rankdir = 'TB'
 
-    def __str__(self):
+    def __str__(self) -> str:
         lines = []
         lines.append('digraph ' + '"' + self.name + '" {')
         lines.append('edge [fontname="FreeSans",fontsize="12", ' +

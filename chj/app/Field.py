@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,31 +26,42 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+import chj.util.fileutil as UF
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+    from chj.index.DataDictionary import DataDictionary
+    from chj.index.FieldSignature import FieldSignature
+    from chj.app.JavaClass import JavaClass
+    import xml.etree.ElementTree as ET
+
 class Field():
 
-    def __init__(self,jclass,xnode):
-        self.jclass = jclass                     # JavaClass
-        self.jd = jclass.app.jd                  # DataDictionary
-        self.cfsix = int(xnode.get('cfsix'))
+    def __init__(self, jclass: "JavaClass", xnode: "ET.Element"):
+        self.jclass = jclass                                        # JavaClass
+        self.jd: "DataDictionary" = jclass.app.jd                   # DataDictionary
+        self.cfsix = UF.safe_get(xnode, 'cfsix', 'cfsix missing from xml of class ' + jclass.get_qname(), int)
         self.access = xnode.get('access')
         self.isfinal = 'final' in xnode.attrib and xnode.get('final') == 'yes'
         self.isstatic = 'static' in xnode.attrib and xnode.get('static') == 'yes'
         self.xnode = xnode
 
-    def get_signature(self):
+    def get_signature(self) -> "FieldSignature":
         return self.jd.get_cfs(self.cfsix).get_signature()
 
-    def get_field_name(self):
+    def get_field_name(self) -> str:
         return self.get_signature().get_name()
 
-    def has_value(self):
+    def has_value(self) -> bool:
         v = self.xnode.find('value')
         return (not v is None)
 
-    def is_scalar(self): return self.get_signature().is_scalar()
+    def is_scalar(self) -> bool: return self.get_signature().is_scalar()
 
-    def is_array(self): return self.get_signature().is_array()
+    def is_array(self) -> bool: return self.get_signature().is_array()
 
-    def is_object(self): return self.getsignature().is_object()
+    def is_object(self) -> bool: return self.get_signature().is_object()
 
     

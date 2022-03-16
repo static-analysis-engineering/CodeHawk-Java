@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,42 +26,63 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import Tuple, TYPE_CHECKING
+
+import chj.util.fileutil as UF
+
+if TYPE_CHECKING:
+    from chj.libsum.MethodSummary import MethodSummary
+    import xml.etree.ElementTree as ET
 
 class SummaryTimeCost(object):
 
-    def __init__(self,methodsum,xnode):
-        self.methodsum = jmethodsum
+    def __init__(self,
+            methodsum: "MethodSummary",
+            xnode: "ET.Element"):
+        self.methodsum = methodsum
         self.xnode = xnode
 
-    def is_constant_cost(self):
-        return len(self.xnode.find('cost')) > 0 and self.xnode.find('cost')[0].tag == 'cn'
+    def is_constant_cost(self) -> bool:
+        xcost = UF.safe_find(self.xnode, 'cost', self.methodsum.get_name() + ' cost missing from xml')
+        return len(xcost) > 0 and xcost[0].tag == 'cn'
 
-    def is_interval_cost(self):
-        xcost = self.xnode.find('cost')
+    def is_interval_cost(self) -> bool:
+        xcost = UF.safe_find(self.xnode, 'cost', self.methodsum.get_name() + ' cost missing from xml')
         return 'lb' in xcost.attrib and 'ub' in xcost.attrib
             
-    def is_from_model(self):
+    def is_from_model(self) -> bool:
         return 'src' in self.xnode.attrib and self.xnode.get('src') == 'model'
 
-    def has_model_comparison_value(self):
+    def has_model_comparison_value(self) -> bool:
         return 'modelvalue' in self.xnode.attrib
 
-    def has_calls(self):
+    def has_calls(self) -> bool:
         return 'calls' in self.xnode.attrib and self.xnode.get('calls') == 'yes'
 
-    def get_constant_cost(self):
-        return int(self.xnode.find('cost').find('cn').text)
+    def get_constant_cost(self) -> int:
+        xcost = UF.safe_find(self.xnode, 'cost', self.methodsum.get_name() + ' cost missing from xml')
+        xcn = UF.safe_find(xcost, 'cn', self.methodsum.get_name() + ' cn missing from xml')
+        if xcn.text is not None:
+            return int(xcn.text)
+        else:
+            raise UF.CHJError(self.methodsum.get_name() + ' text missing from xml')
 
-    def get_interval_cost(self):
+    def get_interval_cost(self) -> Tuple[int, int]:
         if self.is_interval_cost():
-            xcost = self.xnode.find('cost')
-            return (int(xcost.get('lb')),int(xcost.get('ub')))
+            xcost = UF.safe_find(self.xnode, 'cost', 'cost missing from xml for interval')
+            lb = UF.safe_get(xcost, 'lb', 'lb missing from xml for interval', int)
+            ub = UF.safe_get(xcost, 'ub', 'ub missing from xml for interval', int)
+            return (lb, ub)
+        else:
+            raise UF.CHJError('Cost of ' + self.methodsum.get_name() + ' is not an interval cost')
 
-    def get_model_comparison_value(self):
+    def get_model_comparison_value(self) -> int:
         if self.has_model_comparison_value():
-            return int(self.xnode.get('modelvalue'))
+            return UF.safe_get(self.xnode, 'modelvalue', 'modelvalue missing from xml', int)
+        else:
+            raise UF.CHJError(self.methodsum.get_name() + ' does not have a model comparison value')
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.is_constant_cost():
             return str(self.get_constant_cost())
         if self.is_interval_cost():

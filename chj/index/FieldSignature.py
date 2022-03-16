@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,43 +27,63 @@
 # ------------------------------------------------------------------------------
 
 from chj.index.JType import JavaTypesBase
+import chj.util.fileutil as UF
+
+from typing import cast, Any, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.Classname import Classname
+    from chj.index.JTypeDictionary import JTypeDictionary
+    from chj.index.JObjectTypes import JObjectTypeBase
+    import chj.index.JValueTypes as JVT
 
 class FieldSignature(JavaTypesBase):
 
-    def __init__(self,tpd,index,tags,args):
+    def __init__(self,
+            tpd: "JTypeDictionary",
+            index: int,
+            tags: List[str],
+            args: List[int]):
         JavaTypesBase.__init__(self,tpd,index,tags,args)
 
-    def get_type(self): return self.tpd.get_value_type(int(self.args[1]))
+    def get_type(self) -> "JVT.JValueTypeBase": return self.tpd.get_value_type(int(self.args[1]))
 
-    def get_name(self): return str(self.tpd.get_string(self.args[0]))
+    def get_name(self) -> str: return str(self.tpd.get_string(self.args[0]))
 
-    def get_scalar_size(self): return self.get_type().get_scalar_size()
+    def get_scalar_size(self) -> int: 
+        return self.get_type().get_scalar_size()    #cast enforcd by call to is_scalar
 
-    def get_object_type(self):
+    def get_object_type(self) -> "JObjectTypeBase":
         if self.is_object():
-            return self.get_type().get_object_type()
+            return cast("JVT.ObjectValueType", self.get_type()).get_object_type()   #cast enforced by call to is_object
+        else:
+            raise UF.CHJError(str(self) + ' does not have an object type')
 
-    def is_scalar(self): return self.get_type().is_scalar()
+    def is_scalara(self) -> bool: return self.get_type().is_scalar()
 
-    def is_array(self): return self.get_type().is_array()
+    def is_array(self) -> bool: return self.get_type().is_array_type()
 
-    def is_object(self): return self.get_type().is_object()
+    def is_object(self) -> bool: return self.get_type().is_object()
 
-    def __str__(self): return self.get_name()
+    def __str__(self) -> str: return self.get_name()
 
 
 class ClassFieldSignature(JavaTypesBase):
 
-    def __init__(self,tpd,index,tags,args):
+    def __init__(self,
+        tpd: "JTypeDictionary",
+        index: int,
+        tags: List[str],
+        args: List[int]):
         JavaTypesBase.__init__(self,tpd,index,tags,args)
         self.cnix = int(self.args[0])
         self.fsix = int(self.args[1])
 
-    def get_signature(self):
+    def get_signature(self) -> "FieldSignature":
         return self.tpd.get_field_signature_data(self.fsix)
 
-    def get_class_name(self):
+    def get_class_name(self) -> "Classname":
         return self.tpd.get_class_name(self.cnix)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.get_class_name()) + '.' + str(self.get_signature())

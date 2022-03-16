@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,24 +28,35 @@
 
 from chj.util.DotGraph import DotGraph
 
+import chj.util.fileutil as UF
+
+from typing import Any, Dict, List, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+    from chj.index.CallgraphDictionary import CallgraphTargetBase
+    import xml.etree.ElementTree as ET
+
 class Callgraph():
 
-    def __init__(self,app,xnode):
+    def __init__(self, app: "AppAccess", xnode: "ET.Element"):
         self.app = app                   # AppAccess
         self.jd = self.app.jd            # DataDictionary
         self.cgd = self.jd.cgd           # CallgraphDictionary
         self.xnode = xnode
-        self.edges = {}             # cms-ix -> pc -> CallgraphTargetBase
-        self.callbackedges = []     # cms-ix list
+        self.edges: Dict[int, Dict[int, "CallgraphTargetBase"]] = {}             # cms-ix -> pc -> CallgraphTargetBase
+        self.callbackedges: List[int] = []     # cms-ix list
         self._get_edges()
 
-    def as_dot(self, cmsix):
-        def register_node(dotgraph, cmsix, nodes):
+    def as_dot(self, cmsix:int) -> Tuple[Dict[str, str], DotGraph]:
+        def register_node(dotgraph: DotGraph,
+                        cmsix: int, nodes:
+                        Dict[str, str]) -> None:
             txt = self.app.get_method(cmsix).get_aqname()
             nodes[txt] = str(cmsix)
             dotgraph.add_node(txt) 
 
-        nodes = {}
+        nodes: Dict[str, str] = {}
         dotgraph = DotGraph("cg_" + str(cmsix))
         register_node(dotgraph, cmsix, nodes)
 
@@ -75,7 +87,7 @@ class Callgraph():
                         dotgraph.add_edge(methodname, tgtname)
         return (nodes, dotgraph)
 
-    def as_rev_dot(self, cmsix):
+    def as_rev_dot(self, cmsix: int) -> DotGraph:
         dotgraph = DotGraph("revcg_" + str(cmsix))
         dotgraph.add_node(self.app.get_method(cmsix).get_aqname())
 
@@ -97,56 +109,61 @@ class Callgraph():
 
         return dotgraph
 
-    def is_callback(self,cmsix):
-        self._get_callback_edges()
+    def is_callback(self, cmsix: int) -> bool:
+        self._getcallbackedges()
         return cmsix in self.callbackedges
 
-    def has_target(self,cmsix,pc):
+    def has_target(self, cmsix: int, pc: int) -> bool:
         self._get_edges()
         return (cmsix in self.edges) and (pc in self.edges[cmsix])
 
-    def get_target(self,cmsix,pc):
+    def get_target(self, cmsix: int, pc: int) -> "CallgraphTargetBase":
         self._get_edges()
         if cmsix in self.edges:
             if pc in self.edges[cmsix]:
                 return self.edges[cmsix][pc]
+        raise UF.CHJError("Callgraph Target missing from cmsix : " + str(cmsix) + ", pc: " + str(pc))
 
-    def _get_edges(self):
+    def _get_edges(self) -> None:
+        errormsg = 'missing from xml for callgraph'
+
         if len(self.edges) > 0: return
-        for e in self.xnode.find('edges').findall('edge'):
-            srccmsix = int(e.get('ix'))
-            pc = int(e.get('pc'))
+        for e in UF.safe_find(self.xnode, 'edges', 'edges ' + errormsg).findall('edge'):
+            srccmsix = UF.safe_get(e, 'ix', 'ix ' + errormsg , int)
+            pc = UF.safe_get(e, 'pc', 'pc ' + errormsg , int)
             if not srccmsix in self.edges: self.edges[srccmsix] = {}
-            self.edges[srccmsix][pc] = self.cgd.get_target(int(e.get('itgt')))
+            self.edges[srccmsix][pc] = self.cgd.get_target(UF.safe_get(e, 'itgt', 'itgt ' + errormsg, int))
 
-    def _get_method_edges(self, cmsix):
-        edges = {}
+    def _get_method_edges(self, cmsix: int) -> Dict[int, Tuple[int, "CallgraphTargetBase"]]:
+        edges: Dict[int, Tuple[int, "CallgraphTargetBase"]] = {}
+        errormsg = ' missing from xml for method with cmsix ' + str(cmsix)
 
-        for e in self.xnode.find('edges').findall('edge'):
-            if int(e.get('ix')) == cmsix:
-                pc = int(e.get('pc'))
-                tgt = self.cgd.get_target(int(e.get('itgt')))
+        for e in UF.safe_find(self.xnode, 'edges', 'edges ' + errormsg).findall('edge'):
+            if UF.safe_get(e, 'ix', 'ix ' + errormsg, int) == cmsix:
+                pc = UF.safe_get(e, 'pc', 'pc ' + errormsg, int)
+                tgt = self.cgd.get_target(UF.safe_get(e, 'itgt', 'itgt ' + errormsg, int))
                 if tgt.is_non_virtual_target() or tgt.is_virtual_target():
-                    msix = int(e.get('ms-ix'))
-                    if not pc in edges: edges[pc] = {}
+                    msix = UF.safe_get(e, 'ms-ix', 'ms-ix ' + errormsg, int)
                     edges[pc] = (msix, tgt)
         return edges
 
-    def _get_rev_method_edges(self,cmsix):
+    def _get_rev_method_edges(self, cmsix: int) -> Dict[int, int]:
+        errormsg = ' missing from xml for method with cmsix ' + str(cmsix)
+
         edges = {}
-        for e in self.xnode.find('edges').findall('edge'):
-            msix = int(e.get('ms-ix'))
-            tgt = self.cgd.get_target(int(e.get('itgt')))
+        for e in UF.safe_find(self.xnode, 'edges', 'edges ' + errormsg).findall('edge'):
+            msix = UF.safe_get(e, 'ms-ix', 'ms-ix ' + errormsg, int)
+            tgt = self.cgd.get_target(UF.safe_get(e, 'itgt', 'itgt ' + errormsg, int))
             for cnix in tgt.cnixs:
                 tgtcmsix = self.jd.get_cmsix(cnix, msix)
                 if tgtcmsix == cmsix:
-                    srcix = int(e.get('ix'))
-                    pc = int(e.get('pc'))
+                    srcix = UF.safe_get(e, 'ix', 'ix ' + errormsg, int)
+                    pc = UF.safe_get(e, 'pc', 'pc ' + errormsg, int)
                     edges[pc] = srcix
         return edges
 
-    def _getcallbackedges(self):
+    def _getcallbackedges(self) -> None:
         if len(self.callbackedges) > 0: return
-        for e in self.xnode.find('callback-edges').findall('cb-edge'):
-            self.callbackedges.append(int(e.get('ix')))
+        for e in UF.safe_find(self.xnode, 'callback-edges', 'callback-edges missing from xml').findall('cb-edge'):
+            self.callbackedges.append(UF.safe_get(e, 'ix', 'ix missing callback-edges xml', int))
         

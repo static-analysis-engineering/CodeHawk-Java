@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,42 +29,55 @@
 from chj.libsum.MethodSummarySignature import MethodSummarySignature
 from chj.libsum.SummaryTimeCost import SummaryTimeCost
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.libsum.ClassSummary import ClassSummary
+    import xml.etree.ElementTree as ET
+
+import chj.util.fileutil as UF
+
 class MethodSummary(object):
 
-    def __init__(self,classsum,xnode):
-        self.classsum = jclasssum
+    def __init__(self, classsum: "ClassSummary", xnode: "ET.Element"):
+        self.classsum = classsum
         self.xnode = xnode
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         return not ('valid' in self.xnode.attrib and self.xnode.get('valid') == 'no')
 
-    def is_constructor(self): return False
+    def is_constructor(self) -> bool: return False
 
-    def is_inherited(self):
+    def is_inherited(self) -> bool:
         return 'inherited' in self.xnode.attrib and self.xnode.get('inherited') == 'yes'
 
-    def get_name(self): return self.xnode.get('name')
+    def get_name(self) -> str: 
+        return UF.safe_get(self.xnode, 'name', 'name missing from MethodSummary', str)
 
-    def get_signature(self):
-        return JMethodSummarySignature(self,self.xnode.find('signature'))
+    def get_signature(self) -> MethodSummarySignature:
+        return MethodSummarySignature(self, UF.safe_find(self.xnode, 'signature', 'signature missing from xml for methodsummary'))
 
-    def has_time_cost(self):
+    def has_time_cost(self) -> bool:
         return (not self.is_inherited()
-                    and 'time-cost' in [ x.tag for x in self.xnode.find('summary') ])
+                    and 'time-cost' in [ x.tag for x in UF.safe_find(self.xnode, 'summary', 'summary missing from xml for Method Summary')])
 
-    def get_time_cost(self):
+    def get_time_cost(self) -> SummaryTimeCost:
         if self.has_time_cost():
-            xtim = self.xnode.find('summary').find('time-cost')
-            return JSummaryTimeCost(self,xtim)
+            errormsg = ' missing from xml for Method Summary'
+            xsum = UF.safe_find(self.xnode, 'summary', 'summary ' + errormsg)
+            xtim = UF.safe_find(xsum, 'time-cost', 'time-cost ' + errormsg)
+            return SummaryTimeCost(self,xtim)
+        else:
+            raise UF.CHJError("Time Cost missing from xml for Method Summary")
 
 
 class ConstructorSummary(MethodSummary):
 
-    def __init__(self,classsum,xnode):
-        JMethodSummary.__init__(self,classsum,xnode)
+    def __init__(self, classsum: "ClassSummary", xnode: "ET.Element"):
+        MethodSummary.__init__(self,classsum,xnode)
 
-    def is_constructor(self): return True
+    def is_constructor(self) -> bool: return True
 
-    def is_inherited(self): return False
+    def is_inherited(self) -> bool: return False
 
-    def get_name(self): return '<init>'
+    def get_name(self) -> str: return '<init>'

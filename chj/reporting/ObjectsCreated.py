@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,13 +26,18 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+
 class ObjectsCreated(object):
 
-    def __init__(self,app):
+    def __init__(self, app: "AppAccess"):
         self.app = app
         self.objects_created = self.app.get_objects_created()
 
-    def to_string(self):
+    def to_string(self) -> str:
         lines = []
         for (cmsix,mobjects) in self.objects_created:
             lines.append('\n' + self.app.jd.get_cms(cmsix).get_aqname())

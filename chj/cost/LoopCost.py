@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,19 +28,35 @@
 
 from chj.cost.CostMeasure import CostMeasure
 
+import chj.util.fileutil as UF
+
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.cost.MethodCost import MethodCost
+    import xml.etree.ElementTree as ET
+    from chj.index.JTermDictionary import JTermDictionary
+
 class LoopCost():
 
-    def __init__(self,mc,xnode):
-        self.mc = mc               # MethodCost
-        self.jtd = mc.jtd          # JTermDictionary
+    def __init__(self, mc:"MethodCost", xnode:"ET.Element"):
+        self.mc = mc                                # MethodCost
+        self.jtd: "JTermDictionary" = mc.jtd        # JTermDictionary
         self.xnode = xnode
-        self.pc = int(xnode.get('hpc'))
-        self.one_iteration_cost = None
-        self.iteration_count = None
+        self.one_iteration_cost: CostMeasure
+        self.iteration_count: CostMeasure
         self._initialize()
 
-    def _initialize(self):
-        oneit = self.jtd.get_jterm_range(int(self.xnode.get('i1it')))
-        itc = self.jtd.get_jterm_range(int(self.xnode.get('iitcount')))
+    @property
+    def pc(self) -> int:
+        pc = self.xnode.get('hpc')
+        if pc is None:
+            raise UF.CHJError("hpc missing from xml")
+        else:
+            return int(pc)
+
+    def _initialize(self) -> None:
+        oneit = self.jtd.get_jterm_range(UF.safe_get(self.xnode, 'i1it', 'i1it missing from xml', int))
+        itc = self.jtd.get_jterm_range(UF.safe_get(self.xnode, 'iitcount', 'iitcount missing from xml', int))
         self.one_iteration_cost = CostMeasure(self.mc,oneit)
         self.iteration_count = CostMeasure(self.mc,itc)

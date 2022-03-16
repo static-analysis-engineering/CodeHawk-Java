@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,14 +27,22 @@
 # ------------------------------------------------------------------------------
 
 
+from typing import Dict, List, Tuple
+
 class DirectedGraph(object):
 
-    def __init__(self,nodes,edges):
+    def __init__(self,
+            nodes: List[int],
+            edges: Dict[int, List[int]]) -> None:
         self.nodes = nodes
         self.edges = edges    # adjacency list: n -> [ n ]
-        self.paths = []
+        self.paths: List[List[int]] = []
 
-    def find_paths_aux(self,src,dst,visited,path):
+    def find_paths_aux(self,
+            src: int,
+            dst: int,
+            visited: Dict[int, bool],
+            path: List[int]) -> None:
         visited[src] = True
         path.append(src)
         if src == dst:
@@ -45,7 +54,7 @@ class DirectedGraph(object):
         path.pop()
         visited[src] = False
 
-    def find_paths(self,src,dst):
+    def find_paths(self, src: int, dst: int) -> None:
         visited = {}
         for n in self.nodes:
             visited[n] = False

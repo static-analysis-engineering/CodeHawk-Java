@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,28 +26,36 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import Dict, Optional, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+    from chj.index.DataDictionary import DataDictionary
+
 import chj.util.printutil as UP
+
+import chj.index.Taint as T
 
 class TaintOrigins():
 
-    def __init__(self,app):
+    def __init__(self,app: "AppAccess"):
         self.app = app
-        self.jd = app.jd
+        self.jd: "DataDictionary" = app.jd
 
-    def as_dictionary(self):
+    def as_dictionary(self) -> Dict[str, str]:
         results = {}
-        def f(origin):
+        def f(origin: T.TaintBase) -> None:
             results[str(origin.index)] = str(origin)
         self.jd.iter_taint_origins(f)
         return results
 
-    def tostring(self,source):
+    def tostring(self, source: Optional[str]) -> str:
         header = [('index',8)]
-        headerline = ''.join([UP.cjust(t[0],8) for t in header]) + ' taint origin site'
+        headerline = ''.join([UP.cjust(str(t[0]),8) for t in header]) + ' taint origin site'
         result = []
         lines= []
-        def f(origin):
-            if source is None or source in str(origin):
+        def f(origin: T.TaintBase) -> None:
+            if (source is None) or (source in str(origin)):
                 result.append(str(origin.index).rjust(6) + '  ' + str(origin))
         self.jd.iter_taint_origins(f)
         lines.append(headerline)

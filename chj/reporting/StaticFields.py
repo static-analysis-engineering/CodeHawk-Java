@@ -5,6 +5,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2016-2020 Kestrel Technology LLC
+# Copyright (c) 2021      Andrew McGraw
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,17 +26,22 @@
 # SOFTWARE.
 # ------------------------------------------------------------------------------
 
+from typing import Dict, List, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chj.index.AppAccess import AppAccess
+
 class StaticFields():
 
-    def __init__(self,app):
+    def __init__(self, app: "AppAccess"):
         self.app = app
         self.initializers = self.app.get_static_initializers()
         self.readers = self.app.get_static_field_readers()
 
-    def as_dictionary(self):
+    def as_dictionary(self) -> Dict[str, Dict[str, Dict[str, Dict[int, Tuple[int, str]]]]]:
         results = {}
-        initdict = {}
-        readerdict = {}
+        initdict: Dict[str, Dict[str, Dict[int, Tuple[int, str]]]] = {}
+        readerdict: Dict[str, Dict[str, Dict[int, Tuple[int, str]]]] = {}
         for (cmsix, minitializers) in self.initializers:
             cms = str(self.app.jd.get_cms(cmsix).get_aqname())
             for (pc,cn,field) in minitializers:
@@ -58,11 +64,11 @@ class StaticFields():
         results['readerdict'] = readerdict
         return results
 
-    def to_string(self):
+    def to_string(self) -> str:
         lines = []
 
-        initdict = {}
-        readerdict = {}
+        initdict: Dict[int, Dict[int, List[Tuple[int, int]]]] = {}
+        readerdict: Dict[int, Dict[int, List[Tuple[int, int]]]] = {}
         for (cmsix,minitializers) in self.initializers:
             for (pc,cn,field) in minitializers:
                 cnix = cn.index

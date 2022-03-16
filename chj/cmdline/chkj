@@ -1,0 +1,495 @@
+#!/usr/bin/env python3
+# ------------------------------------------------------------------------------
+# CodeHawk Java Analyzer
+# Author: Andrew McGraw
+# ------------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2021 Andrew McGraw
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# ------------------------------------------------------------------------------
+"""
+Command-line interface to the CodeHawk Java Analyzer.
+
+These are commands to analyze an application and view the
+analysis results(<appname> is name of the application):
+
+        info                show configuration information
+
+    These commands parse an application, analyze it, and store the results in xml.
+    To perform the cost, taint, and taint_propagation analysis on an application, the \'run\'
+    command must be performed first.
+        analyze run <appname>                           parse and analyze an application
+        analyze cost <appname>                          create a cost model for an application
+        analyze taint <appname> --space                 analyze taint sources and propagation
+        analyze taint_propagation <appname> <origin>    analyze taint propagation from a given origin
+
+    The scan command parses an application and extracts some statistics
+        scan <appname>
+
+    The translate command parses an applications and translates it to CHIF (CodeHawk Internal Format)
+    without performing further analysis
+        translate <appname>
+
+    There are a large number of commands that can be called to report information and analysis results
+    related to an application.
+    The report command can be followed by the following subcommands:
+        report branchconditions <appname>              branch conditions of an application
+        report bytecode <appname> <cmsix>              show the bytecode of a method in an application 
+        report callgraph <appname>                     list of methods and each call they issue
+        report classmethodcalls <appname> <classname>  named method calls to class
+        report costmodel <appname>                     cpu time cost of methods and loops
+        report ehandlers <appname>                     exception handlers in application
+        report loadedstrings <appname>                 strings loaded in application
+        report loops <appname>                         loops and related statistics
+        report namedmethodcalls <appname> <name>       named methodcalls to (name)
+        report objectfieldwrites <appname>             all object field accesses in application
+        report objectsizes <appname>                   size of objects in application
+        report recursivefuctions <appname>             recursive functions in application
+        report reflectivecalls <appname>               reflective method calls in application
+        report staticfieldinits <appname>              all static field accesses in application
+        report taintorigins <appname>                  taint origins in application
+        report tainttrail <appname> <taintsourceid>    display taint trail from source
+
+    The add commands can be followed by the following subcommands:
+        add calleerestriction <appname> <cmsix> <targetclass>
+        add interfacetarget <appname> <cmsix> <interface> <targetclass>
+        add loopbound <appname> <cmsix> <pc>
+        add methodcost <appname> <cmsix>
+
+    The show commands report information about questions and applications from the STAC Engagement problems.
+    The show command can be followed by the following subcommands:
+        show times <engagement>                      show time needed to analyze the application
+        show apis <engagement>                       show apis used by one or all engagements
+        show dependencies <engagements>              show dependencies for one or all engagements
+        show questions <engagement>                  show questions from a STAC engagement
+
+"""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+
+from typing import NoReturn
+
+import chj.cmdline.addcmds as ADD
+import chj.cmdline.analyzecmds as AC
+import chj.cmdline.showcmds as SC
+import chj.cmdline.reportcmds as RP
+import chj.cmdline.commandutils as UCC
+
+def showinfo(args: argparse.Namespace) -> NoReturn:
+    print(str(Config()))
+    exit(0)
+
+def addcommand(args: argparse.Namespace) -> NoReturn:
+    print('The add commands can be followed by the follwong subcommands:')
+    print('')
+    print('   calleerestriction <appname> <cmsix> <targetclass>')
+    print('   interface_target <appname> <cmsix> <interface> <targetclass>')
+    print('   loopbound <appname> <cmsix> <pc>')
+    print('   methodcost <appname> <cmsix>')
+    print('')
+    exit(0)
+
+def analyzecommand(args: argparse.Namespace) -> NoReturn:
+    print('The analyze command can be followed by the following subcommands:')
+    print('All commands take the name of the executable as first argument')
+    print('')
+    print('   run <appname>                           parse and analyze an application')
+    print('   cost <appname>                          create a cost model for an application')
+    print('   taint <appname> --space                 analyze taint sources and propagation')
+    print('   taint_propagation <appname> <origin>    analyze taint propagation from a given origin')
+    print('')
+    exit(0)
+
+def reportcommand(args: argparse.Namespace) -> NoReturn:
+    print('The report command can be followed by the following subcommands:')
+    print('')
+    print('   branchconditions <appname>              branch conditions of an application')
+    print('   bytecode <appname> <cmsix>              show the bytecode of a method in an application')
+    print('   callgraph <appname>                     list of methods and each call they issue')
+    print('   classmethodcalls <appname> <classname>  named method calls to class') 
+    print('   costmodel <appname>                     cpu time cost of methods and loops')
+    print('   ehandlers <appname>                     exceptional handlers in application')
+    print('   loadedstrings <appname>                 strings loaded in application')
+    print('   loops <appname>                         loops and related statistics')
+    print('   namedmethodcalls <appname> <name>       named methodcalls to (name)')
+    print('   objectfieldwrites <appname>             all object field accesses in application')
+    print('   objectsizes <appname>                   size of objects in application')
+    print('   recursivefuctions <appname>             recursive functions in application')
+    print('   reflectivecalls <appname>               reflective method calls in application')
+    print('   staticfieldinits <appname>              all static field accesses in application')
+    print('   taintorigins <appname>                  taint origins in application')
+    print('   tainttrail <appname> <taintsourceid>    display taint trail from source')
+    print('')
+    exit(0)
+
+def showcommand(args: argparse.Namespace) -> NoReturn:
+    print('The show command can be followed by the following subcommands:')
+    print('Displays various information about the STAC engagement applications:')
+    print('')
+    print('   times <engagement>                      show time needed to analyze the application')
+    print('   apis <engagement>                       show apis used by one or all engagements')
+    print('   dependencies <engagements>              show dependencies for one or all engagements')
+    print('   questions <engagement>                  show questions from a STAC engagement')
+    print('')
+    exit(0)
+
+def scancommand(args: argparse.Namespace) -> NoReturn:
+    print('The scan command parses an application and extract some statistics')
+    print('')
+    print('   scan <appname>')
+    exit(0)
+
+def translatecommand(args: argparse.Namespace) -> NoReturn:
+    print('Parses an application and translates it to CHIF')
+    print('')
+    print('   translate <appname>')
+    exit(0)
+
+def parse() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        formatter_class = argparse.RawDescriptionHelpFormatter,
+        description = __doc__,
+        epilog = 'See for more information ...')
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        exit(0)
+    subparsers = parser.add_subparsers(title='subcommands')
+    parser_info = subparsers.add_parser('info')
+    parser_info.set_defaults(func=showinfo)
+
+    # --------------------------------------------------------------------- add --
+    addcmd = subparsers.add_parser('add')
+    addcmd.set_defaults(func=addcommand)
+    addparser = addcmd.add_subparsers(title='show options')
+
+    callee_restriction = addparser.add_parser('calleerestriction')
+    callee_restriction.add_argument('appname', help='name of application')
+    callee_restriction.add_argument('cmsix', 
+        help='index of method to be annotated', 
+        type=int)
+    callee_restriction.add_argument('targetclass', help='name of target class name for virtual call')
+    callee_restriction.add_argument('--pcs', 
+        nargs='*', 
+        type=int, 
+        help='list of instruction offsets')
+    callee_restriction.set_defaults(func=ADD.callee_restriction)
+
+    interface_target = addparser.add_parser('interfacetarget')
+    interface_target.add_argument('appname', help='name of application')
+    interface_target.add_argument('cmsix', 
+        help='index of the method to be annotated', 
+        type=int)
+    interface_target.add_argument('interface', help='name of interface to be replaced')
+    interface_target.add_argument('targetclass', help='name of target class name for interface target')
+    interface_target.set_defaults(func=ADD.interface_target)
+
+    loopbound = addparser.add_parser('loopbound')
+    loopbound.add_argument('appname', help='name of application')
+    loopbound.add_argument('cmsix', 
+        help='index of the method to be annotated',
+        type=int)
+    loopbound.add_argument('pc',
+        help='pc of the loop head',
+        type=int)
+    loopbound.add_argument('-c', '--constant', 
+        help='number of iterations', type=int)
+    loopbound.add_argument('-s', '--symbolic', 
+        help='name of symbolic constant for number of iterations')
+    loopbound.set_defaults(func=ADD.loopbound)
+
+    methodcost = addparser.add_parser('methodcost')
+    methodcost.add_argument('appname', help='name of application')
+    methodcost.add_argument('cmsix',
+        help='index of the method to be annotated',
+        type=int)
+    methodcost.add_argument('-c', '--cost', 
+        help='constant cost', 
+        type=int)
+    methodcost.add_argument('--lb',
+        help='lower bound on the cost',
+        type=int)
+    methodcost.add_argument('--ub',
+        help='upper bound on the cost',
+        type=int)
+    methodcost.set_defaults(func=ADD.methodcost)
+
+    # ----------------------------------------------------------------- analyze --
+    analyzecmd = subparsers.add_parser('analyze')
+    analyzecmd.set_defaults(func=analyzecommand)
+    analyzeparsers = analyzecmd.add_subparsers(title='show options')
+
+    analysis = analyzeparsers.add_parser('run')
+    analysis.add_argument('appname', help='name of application')
+    analysis.add_argument('-v', '--verbose',
+        action='store_true',
+        help='show list of classes')
+    analysis.set_defaults(func=AC.analyze)
+
+    cost = analyzeparsers.add_parser('cost')
+    cost.add_argument('appname', help='name of application')
+    cost.set_defaults(func=AC.analyze_cost)
+
+    taint = analyzeparsers.add_parser('taint')
+    taint.add_argument('appname', help='name of application')
+    taint.add_argument('-s', '--space',
+        action="store_true",
+        help="analyze for space cost")
+    taint.set_defaults(func=AC.analyze_taint)
+
+    taint_propagation = analyzeparsers.add_parser('taint_propagation')
+    taint_propagation.add_argument('appname', help='name of application')
+    taint_propagation.add_argument('origin', 
+        type=int, 
+        help='index of taint origin of interest')
+    taint_propagation.set_defaults(func=AC.analyze_taint_propagation)
+
+    # -------------------------------------------------------------------- show --
+    showcmd = subparsers.add_parser('show')
+    showcmd.set_defaults(func=showcommand)
+    showparsers = showcmd.add_subparsers(title='show options')
+
+    show_time = showparsers.add_parser('time')
+    show_time.add_argument('engagement', 
+        help='name of engagment (E2, E4, E5, E6, E7)',
+        choices=['E2', 'E4', 'E5', 'E6', 'E7'])
+    show_time.set_defaults(func=SC.show_times)
+
+    show_apis = showparsers.add_parser('apis')
+    show_apis.add_argument('engagements', 
+        help='name of engagement (E2, E4, E5, E6, E7)',
+        choices=['E2', 'E4', 'E5', 'E6', 'E7', 'all']),
+    show_apis.add_argument('--verbose', help='print applications that use api')
+    show_apis.set_defaults(func=SC.show_apis)
+
+    show_dependencies = showparsers.add_parser('dependencies')
+    show_dependencies.add_argument('engagement',
+        nargs='*',
+        help='name of engagement (E2, E4, E5, E6, E7)',
+        choices=['all', 'E2', 'E4', 'E5', 'E6', 'E7'])
+    show_dependencies.add_argument('--verbose', help='print applications that use dependency')
+    show_dependencies.set_defaults(func=SC.show_dependencies)
+
+    show_questions = showparsers.add_parser('questions')
+    show_questions.add_argument('engagement', 
+        help='name of engagement (E2, E4, E5, E6, E7)',
+        choices=['E2', 'E4', 'E5', 'E6', 'E7'])
+    show_questions.add_argument('--time', 
+        help='only show questions with time resource',
+        action='store_true')
+    show_questions.add_argument('--space', 
+        help='only show questions with space resource',
+        action='store_true')
+    show_questions.add_argument('--complexity', 
+        help='only show complexity questions',
+        action='store_true')
+    show_questions.add_argument('--sidechannel', 
+        help='only show side-channel questions',
+        action='store_true')
+    show_questions.set_defaults(func=SC.show_questions)
+
+    # ------------------------------------------------------------------ report --
+    reportcmd = subparsers.add_parser('report')
+    reportcmd.set_defaults(func=reportcommand)
+    reportparsers = reportcmd.add_subparsers(title='show options')
+
+    report_bconds = reportparsers.add_parser('branchconditions')
+    report_bconds.add_argument('appname', help='name of application')
+    report_bconds.add_argument('-i', '--includes',
+        help='only report conditions that include this string',
+        default=None)
+    report_bconds.add_argument('-s', '--save', 
+        help='save report to chreports directory',
+        action='store_true')
+    report_bconds.set_defaults(func=RP.branches)
+
+    bytecode = reportparsers.add_parser('bytecode')
+    bytecode.add_argument('appname', help='name of application')
+    bytecode.add_argument('cmsix', help='index of method to be printed', type=int)
+    bytecode.add_argument('--save', 
+        help='save report to chreports directory',
+        action='store_true')
+    bytecode.add_argument('--showstack', 
+        help='print the expression stack for each instruction',
+        action='store_true')
+    bytecode.add_argument('--showtargets', 
+        help='print the method targets for call instructions',
+        action='store_true')
+    bytecode.add_argument('--showinvariants', 
+        help='print numerical invariants for each pc',
+        action='store_true')
+    bytecode.set_defaults(func=SC.show_bytecode)
+
+    report_cg = reportparsers.add_parser('callgraph')
+    report_cg.add_argument('appname', help='name of application')
+    report_cg.add_argument('-m', '--multiple', 
+        help='only show callsites with multiple targets',
+        action='store_true')
+    report_cg.set_defaults(func=RP.callgraph)
+
+    report_cmethodcalls = reportparsers.add_parser('classmethodcalls')
+    report_cmethodcalls.add_argument('appname', help='name of application')
+    report_cmethodcalls.add_argument('classname', help='name of target class of a method')
+    report_cmethodcalls.add_argument('-s', '--save', 
+        help='save report to chreports directory',
+        action='store_true')
+    report_cmethodcalls.set_defaults(func=RP.class_methodcalls)
+
+    report_costmodel = reportparsers.add_parser('costmodel')
+    report_costmodel.add_argument('appname', help='name of application')
+    report_costmodel.add_argument('-v', '--verbose', 
+        help='include block costs', 
+        action='store_true')
+    report_costmodel.add_argument('-loops', 
+        help='include loop body costs and bound values', 
+        action='store_true')
+    report_costmodel.add_argument('-save', '--save', 
+        help='save report to chreports directory', 
+        action='store_true')
+    report_costmodel.add_argument('--namerestriction', 
+        nargs='*', 
+        help='only report functions that contain these as substrings')
+    report_costmodel.set_defaults(func=RP.costmodel)
+
+    report_ehandlers = reportparsers.add_parser('ehandlers')
+    report_ehandlers.add_argument('appname', help='name of application')
+    report_ehandlers.add_argument('-s', '--save', 
+        help='save report to chreports directory', 
+        action='store_true')
+    report_ehandlers.set_defaults(func=RP.exception_handlers)
+
+    report_lstrings = reportparsers.add_parser('loadedstrings')
+    report_lstrings.add_argument('appname', help='name of application')
+    report_lstrings.add_argument('--substring', help='must include this substring')
+    report_lstrings.add_argument('-s', '--save', 
+        help='save report to chreports directory',
+        action='store_true')
+    report_lstrings.set_defaults(func=RP.loaded_strings)
+
+    report_loops = reportparsers.add_parser('loops')
+    report_loops.add_argument('appname', help='name of application')
+    report_loops.add_argument('-t', '--taintorigins', 
+        nargs='*', 
+        type=int, 
+        help='only include taint from given origins (default: all)')
+    report_loops.add_argument('-s', '--save', 
+        help='save report to chreports directory', 
+        action='store_true')
+    report_loops.set_defaults(func=RP.loops)
+
+    report_nmethodcalls = reportparsers.add_parser('namedmethodcalls')
+    report_nmethodcalls.add_argument('appname', help='name of application')
+    report_nmethodcalls.add_argument('name', help='name of fragment or name of the method')
+    report_nmethodcalls.add_argument('-s', '--save', 
+        help='save report to chreports directory', 
+        action='store_true')
+    report_nmethodcalls.set_defaults(func=RP.named_methodcalls)
+
+    report_obj_field_writes = reportparsers.add_parser('objectfieldwrites')
+    report_obj_field_writes.add_argument('appname', help='name of application')
+    report_obj_field_writes.add_argument('-s', '--save', 
+        help='save report to chreports directory', 
+        action='store_true')
+    report_obj_field_writes.set_defaults(func=RP.object_field_writes)
+
+    report_object_sizes = reportparsers.add_parser('objectsizes')
+    report_object_sizes.add_argument('appname', help='name of application')
+    report_object_sizes.add_argument('-s', '--save',
+        help='save report to chreports directory', action='store_true')
+    report_object_sizes.set_defaults(func=RP.object_sizes)
+
+    report_objects_created = reportparsers.add_parser('objectscreated')
+    report_objects_created.add_argument('appname', help='name of application')
+    report_objects_created.add_argument('-s', '--save',
+        help='save report to chreports directory',
+        action='store_true')
+    report_objects_created.set_defaults(func=RP.objects_created)
+
+    report_recursive_functions = reportparsers.add_parser('recursivefunctions')
+    report_recursive_functions.add_argument('appname', help='name of application')
+    report_recursive_functions.add_argument('-s', '--save',
+        help='save report to chreports directory',
+        action='store_true')
+    report_recursive_functions.set_defaults(func=RP.recursive_functions)
+
+    report_reflective_calls = reportparsers.add_parser('reflectivecalls')
+    report_reflective_calls.add_argument('appname', help='name of application')
+    report_reflective_calls.add_argument('-s', '--save',
+        help='save report to chreports directory',
+        action='store_true')
+    report_reflective_calls.set_defaults(func=RP.reflective_calls)
+
+    report_static_field_inits = reportparsers.add_parser('staticfieldinits')
+    report_static_field_inits.add_argument('appname', help='name of application')
+    report_static_field_inits.add_argument('-s', '--save',
+        help='save report to chreports directory',
+        action='store_true')
+    report_static_field_inits.set_defaults(func=RP.static_field_inits)
+
+    report_taint_origins = reportparsers.add_parser('taintorigins')
+    report_taint_origins.add_argument('appname', help='name of application')
+    report_taint_origins.add_argument('-o', '--source',
+        help='only include sources with source as substring')
+    report_taint_origins.add_argument('-s', '--save',
+        help='save report to chreports directory',
+        action='store_true')
+    report_taint_origins.set_defaults(func=RP.taint_origins)
+
+    report_taint_trail = reportparsers.add_parser('tainttrail')
+    report_taint_trail.add_argument('appname', help='name of application')
+    report_taint_trail.add_argument('taintsourceid', type=int,
+                            help='id of the taint source (get from chj_report_taint_origins)')
+    report_taint_trail.add_argument('-s', '--sink',
+        help='(partial) name of a node to restrict paths to as a destination')
+    report_taint_trail.add_argument('-l', '--loops',
+        help='restrict paths to destinations that represent loop counters')
+    report_taint_trail.set_defaults(func=RP.taint_trail)
+
+    # -------------------------------------------------------------------- scan --
+    scancmd = subparsers.add_parser('scan')
+    scancmd.add_argument('appname', help='name of application')
+    scancmd.add_argument('-c', '--showmissingclasses', 
+        action='store_true',
+        help='show list of missing classes')
+    scancmd.add_argument('-m', '--showmissingmethods',
+        action='store_true',
+        help='show list of missing methods')
+    scancmd.add_argument('-i', '--platform_independent',
+        action='store_true',
+        help='don\'t use reference platform')
+    scancmd.set_defaults(func=UCC.scan)
+
+    # ---------------------------------------------------------------- translate --
+    translatecmd = subparsers.add_parser('translate')
+    translatecmd.add_argument('appname', help='name of application')
+    translatecmd.set_defaults(func=UCC.translate)
+
+    # -- parse --
+    args = parser.parse_args()
+    return args
+
+if __name__ == '__main__':
+
+    args = parse()
+    args.func(args)
